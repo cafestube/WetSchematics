@@ -14,9 +14,18 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
 
     implementation(project(":paper:versioned"))
-    implementation(project(":"))
+    compileOnly(project(":"))
 
 }
+
+
+tasks {
+    assemble {
+        dependsOn(reobfJar)
+    }
+
+}
+
 
 tasks.test {
     useJUnitPlatform()

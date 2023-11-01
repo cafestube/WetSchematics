@@ -1,5 +1,6 @@
 plugins {
-    `java-library`
+    id("java-library")
+    id("maven-publish")
 }
 
 group = "eu.cafestube"
@@ -16,6 +17,27 @@ allprojects {
     }
 
 }
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "$group"
+            artifactId = "WetSchematics"
+            version = "${project.version}"
+
+            artifact(tasks["shadowJar"])
+            artifact(tasks["sourcesJar"])
+        }
+        repositories {
+            maven {
+                name = "cafestubeRepository"
+                credentials(PasswordCredentials::class)
+                url = uri("https://repo.cafestu.be/repository/maven-public-snapshots/")
+            }
+        }
+    }
+}
+
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")
