@@ -43,7 +43,7 @@ dependencies {
 }
 
 tasks.named<ShadowJar>("shadowJar") {
-//    dependsOn(versions.map { project.project(":$it") }.map { it.tasks.named("build") })
+    dependsOn(versions.map { ":paper:versioned:${it}:build" })
     from(Callable {
         versionSpecific.resolve()
             .map { f ->
