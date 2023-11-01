@@ -10,12 +10,10 @@ import eu.cafestube.schematics.version.V1SchematicVersion;
 import eu.cafestube.schematics.version.V2SchematicVersion;
 import eu.cafestube.schematics.version.V3SchematicVersion;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 public class SchematicIO {
 
@@ -24,6 +22,31 @@ public class SchematicIO {
             2, new V2SchematicVersion(),
             3, new V3SchematicVersion()
     );
+
+    public static void writeSchematic(OutputStream stream, int version, Schematic schematic) throws IOException {
+        writeSchematic(stream, version, schematic, true, false);
+    }
+
+
+    public static void writeSchematic(OutputStream stream, int version, Schematic schematic, boolean compressed, boolean littleEndian) throws IOException {
+        SchematicVersion schematicVersion = versions.get(version);
+
+        try {
+            if(schematicVersion == null) {
+                throw new IllegalArgumentException("Unsupported schematic version: " + version);
+            }
+            CompoundTag serialize = schematicVersion.serialize(schematic);
+            serialize.put(new IntTag("Version", version));
+
+            if(compressed) {
+                stream = new GZIPOutputStream(stream);
+            }
+
+            NBTIO.writeTag(stream, serialize, littleEndian);
+        } finally {
+            stream.close();
+        }
+    }
 
     public static Schematic parseSchematic(File file) throws IOException {
         return parseSchematic(NBTIO.readFile(file));

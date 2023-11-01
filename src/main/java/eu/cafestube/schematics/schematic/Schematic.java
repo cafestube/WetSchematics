@@ -6,8 +6,10 @@ import eu.cafestube.schematics.schematic.biome.BiomeData;
 import eu.cafestube.schematics.schematic.biome.BiomeDataType;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public record Schematic(
         int dataVersion,
@@ -28,6 +30,42 @@ public record Schematic(
 ) {
 
     public static final int NO_DATA_VERSION = -1;
+
+    @Override
+    public String toString() {
+        return "Schematic{" +
+                "dataVersion=" + dataVersion +
+                ", width=" + width +
+                ", height=" + height +
+                ", length=" + length +
+                ", metadata=" + metadata +
+                ", offset=" + offset +
+                ", blockStatePalette=" + blockStatePalette +
+                ", blockData=" + Arrays.toString(blockData) +
+                ", blockEntities=" + blockEntities +
+                ", entities=" + entities +
+                ", biomeData=" + biomeData +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Schematic schematic = (Schematic) o;
+        return dataVersion == schematic.dataVersion && width == schematic.width && height == schematic.height
+                && length == schematic.length && Objects.equals(metadata, schematic.metadata) && Objects.equals(offset, schematic.offset)
+                && Objects.equals(blockStatePalette, schematic.blockStatePalette)
+                && Arrays.equals(blockData, schematic.blockData) && Objects.equals(blockEntities, schematic.blockEntities)
+                && Objects.equals(entities, schematic.entities) && Objects.equals(biomeData, schematic.biomeData);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Objects.hash(dataVersion, width, height, length, metadata, offset, blockStatePalette, blockEntities, entities, biomeData);
+        result = 31 * result + Arrays.hashCode(blockData);
+        return result;
+    }
 
     public String getBlockData(int x, int y, int z) {
         int index = (x + z * width + y * width * length);

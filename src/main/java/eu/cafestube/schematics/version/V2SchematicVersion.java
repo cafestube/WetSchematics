@@ -93,7 +93,7 @@ public class V2SchematicVersion implements SchematicVersion {
         entityTag.put(new StringTag("Id", entity.id()));
         entityTag.put(new ListTag("Pos", List.of(new DoubleTag("x", entity.pos().x()),
                 new DoubleTag("y", entity.pos().y()), new DoubleTag("z", entity.pos().z()))));
-        return new CompoundTag("Entity", extraData);
+        return entityTag;
     }
 
 
@@ -157,7 +157,7 @@ public class V2SchematicVersion implements SchematicVersion {
         compound.put(serializeEntities(schematic.entities()));
 
         if(schematic.biomeData() != null) {
-            compound.put(new IntTag("BiomePaletteMax", schematic.biomeData().biomePalette().keySet().stream().max(Integer::compare).orElse(0)));
+            compound.put(new IntTag("BiomePaletteMax", schematic.biomeData().biomePalette().keySet().stream().max(Integer::compare).orElse(0) + 1));
 
             CompoundTag biomePaletteTag = new CompoundTag("BiomePalette");
             schematic.biomeData().biomePalette().forEach((id, name) -> biomePaletteTag.put(new IntTag(name, id)));

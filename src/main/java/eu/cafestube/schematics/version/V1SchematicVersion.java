@@ -55,7 +55,7 @@ public class V1SchematicVersion implements SchematicVersion {
     }
 
     public static void writeBlockPalette(Map<Integer, String> palette, CompoundTag compound) {
-        int paletteMax = palette.keySet().stream().max(Integer::compare).orElse(0);
+        int paletteMax = palette.keySet().stream().max(Integer::compare).orElse(0) + 1;
 
         compound.put(new IntTag("PaletteMax", paletteMax));
         CompoundTag paletteTag = new CompoundTag("Palette");
