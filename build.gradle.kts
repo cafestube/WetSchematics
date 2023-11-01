@@ -18,6 +18,14 @@ allprojects {
 
 }
 
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+    withSourcesJar()
+}
+
 publishing {
     publications {
         create<MavenPublication>("maven") {
@@ -25,7 +33,7 @@ publishing {
             artifactId = "WetSchematics"
             version = "${project.version}"
 
-            artifact(tasks["shadowJar"])
+            artifact(tasks["jar"])
             artifact(tasks["sourcesJar"])
         }
         repositories {
