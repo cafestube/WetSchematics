@@ -1,13 +1,13 @@
 package eu.cafestube.schematics.version;
 
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import eu.cafestube.schematics.schematic.Schematic;
-import me.nullicorn.nedit.type.NBTCompound;
 
 public interface SchematicVersion {
 
-    Schematic deserialize(NBTCompound compound);
+    Schematic deserialize(CompoundTag compound);
 
-    NBTCompound serialize(Schematic schematic);
+    CompoundTag serialize(Schematic schematic);
 
     int getVersion();
 

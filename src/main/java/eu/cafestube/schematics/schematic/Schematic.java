@@ -1,9 +1,9 @@
 package eu.cafestube.schematics.schematic;
 
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import eu.cafestube.schematics.math.BlockPos;
 import eu.cafestube.schematics.schematic.biome.BiomeData;
 import eu.cafestube.schematics.schematic.biome.BiomeDataType;
-import me.nullicorn.nedit.type.NBTCompound;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -14,7 +14,7 @@ public record Schematic(
         int width,
         int height,
         int length,
-        NBTCompound metadata,
+        CompoundTag metadata,
         BlockPos offset,
 
         Map<Integer, String> blockStatePalette,

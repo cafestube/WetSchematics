@@ -1,12 +1,10 @@
 package eu.cafestube.schematics.version;
 
+import com.github.steveice10.opennbt.tag.builtin.*;
 import eu.cafestube.schematics.math.BlockPos;
 import eu.cafestube.schematics.schematic.BlockEntity;
 import eu.cafestube.schematics.schematic.Schematic;
 import eu.cafestube.schematics.util.NBTUtil;
-import me.nullicorn.nedit.type.NBTCompound;
-import me.nullicorn.nedit.type.NBTList;
-import me.nullicorn.nedit.type.TagType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,29 +16,26 @@ public class V1SchematicVersion implements SchematicVersion {
 
 
     @Override
-    public Schematic deserialize(NBTCompound compound) {
-        int width = compound.getShort("Width", (short) 0) & 0xFFFF;
-        int height = compound.getShort("Height", (short) 0) & 0xFFFF;
-        int length = compound.getShort("Length", (short) 0) & 0xFFFF;
-        NBTCompound metadata = new NBTCompound();
-        if(compound.containsKey("Metadata")) {
-            metadata = compound.getCompound("Metadata");
+    public Schematic deserialize(CompoundTag compound) {
+        int width = NBTUtil.getShortOrDefault(compound, "Width", (short) 0) & 0xFFFF;
+        int height = NBTUtil.getShortOrDefault(compound, "Height", (short) 0) & 0xFFFF;
+        int length = NBTUtil.getShortOrDefault(compound, "Length", (short) 0) & 0xFFFF;
+        CompoundTag metadata = new CompoundTag("Metadata");
+        if(compound.contains("Metadata")) {
+            metadata = compound.get("Metadata");
         }
 
         BlockPos offset = BlockPos.ZERO;
-        if(compound.containsKey("Offset")) {
-            int[] offsetArray = compound.getIntArray("Offset");
+        if(compound.contains("Offset")) {
+            int[] offsetArray = compound.<IntArrayTag>get("Offset").getValue();
             offset = BlockPos.fromArray(offsetArray);
         }
 
         Map<Integer, String> blockPalette = parseBlockPalette(compound);
 
-        byte[] blockData = compound.getByteArray("BlockData");
+        byte[] blockData = compound.<ByteArrayTag>get("BlockData").getValue();
 
-        NBTList blockEntitiesTag = compound.getList("TileEntities");
-        if(blockEntitiesTag == null) {
-            blockEntitiesTag = new NBTList(TagType.COMPOUND);
-        }
+        ListTag blockEntitiesTag = compound.get("TileEntities");
         List<BlockEntity> blockEntities = parseBlockEntities(blockEntitiesTag);
         Map<BlockPos, BlockEntity> blockEntityMap = blockEntities.stream().collect(Collectors.toMap(BlockEntity::pos, blockEntity -> blockEntity));
 
@@ -48,27 +43,30 @@ public class V1SchematicVersion implements SchematicVersion {
                 blockEntityMap, new ArrayList<>(), null);
     }
 
-    public static Map<Integer, String> parseBlockPalette(NBTCompound compound) {
-        int paletteMax = compound.getInt("PaletteMax", 0);
-        NBTCompound paletteTag = compound.getCompound("Palette");
+    public static Map<Integer, String> parseBlockPalette(CompoundTag compound) {
+        int paletteMax = NBTUtil.getIntOrDefault(compound, "PaletteMax", 0);
+        CompoundTag paletteTag = compound.get("Palette");
 
         if(paletteTag == null || paletteTag.values().size() != paletteMax) {
             throw new IllegalArgumentException("Palette is missing or does not expect the palette max");
         }
 
-        return paletteTag.entrySet().stream().collect(Collectors.toMap(stringObjectEntry -> (int) stringObjectEntry.getValue(), Map.Entry::getKey));
+        return paletteTag.getValue().entrySet().stream().collect(Collectors.toMap(stringObjectEntry -> ((IntTag) stringObjectEntry.getValue()).getValue(), Map.Entry::getKey));
     }
 
-    private List<BlockEntity> parseBlockEntities(NBTList blockEntitiesTag) {
-        return blockEntitiesTag.stream().map(tag -> parseBlockEntity((NBTCompound) tag)).collect(Collectors.toList());
+    private List<BlockEntity> parseBlockEntities(ListTag blockEntitiesTag) {
+        if(blockEntitiesTag == null) {
+            return new ArrayList<>();
+        }
+        return blockEntitiesTag.getValue().stream().map(tag -> parseBlockEntity((CompoundTag) tag)).collect(Collectors.toList());
     }
 
-    private BlockEntity parseBlockEntity(NBTCompound blockEntityTag) {
-        BlockPos pos = BlockPos.fromArray(blockEntityTag.getIntArray("Pos"));
-        String id = blockEntityTag.getString("Id");
-        int contentVersion = blockEntityTag.getInt("ContentVersion", 0);
+    private BlockEntity parseBlockEntity(CompoundTag blockEntityTag) {
+        BlockPos pos = BlockPos.fromArray(blockEntityTag.<IntArrayTag>get("Pos").getValue());
+        String id = blockEntityTag.<StringTag>get("Id").getValue();
+        int contentVersion = NBTUtil.getIntOrDefault(blockEntityTag, "ContentVersion", 0);
 
-        NBTCompound extra = NBTUtil.clone(blockEntityTag);
+        CompoundTag extra = blockEntityTag.clone();
         extra.remove("Pos");
         extra.remove("Id");
         extra.remove("ContentVersion");
@@ -77,7 +75,7 @@ public class V1SchematicVersion implements SchematicVersion {
     }
 
     @Override
-    public NBTCompound serialize(Schematic schematic) {
+    public CompoundTag serialize(Schematic schematic) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 

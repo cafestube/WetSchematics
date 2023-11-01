@@ -1,22 +1,25 @@
 package eu.cafestube.schematics.util;
 
-import me.nullicorn.nedit.type.NBTCompound;
+import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import com.github.steveice10.opennbt.tag.builtin.IntTag;
+import com.github.steveice10.opennbt.tag.builtin.ShortTag;
 
 public class NBTUtil {
 
-    public static NBTCompound clone(NBTCompound compound) {
-        NBTCompound compoundClone = new NBTCompound();
-
-        for(String key : compound.keySet()) {
-            Object o = compound.get(key);
-            if(o instanceof NBTCompound) {
-                o = clone((NBTCompound) o);
-            }
-            System.out.println(o);
-            compoundClone.put(key, o);
+    public static short getShortOrDefault(CompoundTag tag, String field, short defaultValue) {
+        if(tag.contains(field)) {
+            return tag.<ShortTag>get(field).getValue();
+        } else {
+            return defaultValue;
         }
+    }
 
-        return compoundClone;
+    public static int getIntOrDefault(CompoundTag tag, String field, int defaultValue) {
+        if(tag.contains(field)) {
+            return tag.<IntTag>get(field).getValue();
+        } else {
+            return defaultValue;
+        }
     }
 
 }

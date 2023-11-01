@@ -1,5 +1,6 @@
 package eu.cafestube.schematics.version;
 
+import com.github.steveice10.opennbt.tag.builtin.*;
 import eu.cafestube.schematics.math.BlockPos;
 import eu.cafestube.schematics.math.Pos;
 import eu.cafestube.schematics.schematic.BlockEntity;
@@ -7,9 +8,7 @@ import eu.cafestube.schematics.schematic.Entity;
 import eu.cafestube.schematics.schematic.Schematic;
 import eu.cafestube.schematics.schematic.biome.BiomeData;
 import eu.cafestube.schematics.schematic.biome.BiomeDataType;
-import me.nullicorn.nedit.type.NBTCompound;
-import me.nullicorn.nedit.type.NBTList;
-import me.nullicorn.nedit.type.TagType;
+import eu.cafestube.schematics.util.NBTUtil;
 
 import java.util.List;
 import java.util.Map;
@@ -18,41 +17,42 @@ import java.util.stream.Collectors;
 public class V3SchematicVersion implements SchematicVersion {
 
     @Override
-    public Schematic deserialize(NBTCompound compound) {
-        int dataVersion = compound.getInt("DataVersion", 0);
+    public Schematic deserialize(CompoundTag compound) {
+        int dataVersion = NBTUtil.getIntOrDefault(compound, "DataVersion", 0);
 
-        int width = compound.getShort("Width", (short) 0) & 0xFFFF;
-        int height = compound.getShort("Height", (short) 0) & 0xFFFF;
-        int length = compound.getShort("Length", (short) 0) & 0xFFFF;
-        NBTCompound metadata = new NBTCompound();
-        if(compound.containsKey("Metadata")) {
-            metadata = compound.getCompound("Metadata");
+        int width = NBTUtil.getShortOrDefault(compound, "Width", (short) 0) & 0xFFFF;
+        int height = NBTUtil.getShortOrDefault(compound, "Height", (short) 0) & 0xFFFF;
+        int length = NBTUtil.getShortOrDefault(compound, "Length", (short) 0) & 0xFFFF;
+        CompoundTag metadata = new CompoundTag("Metadata");
+        if(compound.contains("Metadata")) {
+            metadata = compound.get("Metadata");
         }
 
         BlockPos offset = BlockPos.ZERO;
-        if(compound.containsKey("Offset")) {
-            int[] offsetArray = compound.getIntArray("Offset");
+        if(compound.contains("Offset")) {
+            int[] offsetArray = compound.<IntArrayTag>get("Offset").getValue();
             offset = BlockPos.fromArray(offsetArray);
         }
 
 
-        NBTCompound blocksTag = compound.getCompound("Blocks");
+        CompoundTag blocksTag = compound.get("Blocks");
 
-        NBTCompound paletteTag = blocksTag.getCompound("Palette");
-        Map<Integer, String> blockPalette = paletteTag.entrySet().stream().collect(Collectors.toMap(stringObjectEntry -> (int) stringObjectEntry.getValue(), Map.Entry::getKey));
-        byte[] blockData = blocksTag.getByteArray("Data");
+        CompoundTag paletteTag = blocksTag.get("Palette");
+        Map<Integer, String> blockPalette = paletteTag.getValue().entrySet().stream()
+                .collect(Collectors.toMap(stringObjectEntry -> ((IntTag) stringObjectEntry.getValue()).getValue(), Map.Entry::getKey));
+        byte[] blockData = blocksTag.<ByteArrayTag>get("Data").getValue();
 
 
         Map<BlockPos, BlockEntity> blockEntityMap = V2SchematicVersion.parseBlockEntities(dataVersion, blocksTag);
 
-        NBTCompound biomesTag = compound.getCompound("Biomes");
-        NBTCompound biomePaletteTag = biomesTag.getCompound("Palette");
-        Map<Integer, String> biomePalette = biomePaletteTag.entrySet().stream()
-                .collect(Collectors.toMap(stringObjectEntry -> (int) stringObjectEntry.getValue(), Map.Entry::getKey));
-        byte[] biomeData = biomesTag.getByteArray("Data");
+        CompoundTag biomesTag = compound.get("Biomes");
+        CompoundTag biomePaletteTag = biomesTag.get("Palette");
+        Map<Integer, String> biomePalette = biomePaletteTag.getValue().entrySet().stream()
+                .collect(Collectors.toMap(stringObjectEntry -> ((IntTag) stringObjectEntry.getValue()).getValue(), Map.Entry::getKey));
+        byte[] biomeData = biomesTag.<ByteArrayTag>get("Data").getValue();
 
 
-        NBTList entitiesTag = compound.getList("Entities");
+        ListTag entitiesTag = compound.get("Entities");
         List<Entity> entities = V2SchematicVersion.parseEntities(entitiesTag);
 
 
@@ -61,7 +61,7 @@ public class V3SchematicVersion implements SchematicVersion {
     }
 
     @Override
-    public NBTCompound serialize(Schematic schematic) {
+    public CompoundTag serialize(Schematic schematic) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 

@@ -7,6 +7,10 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    maven {
+        name = "cafestubeRepository"
+        url = uri("https://repo.cafestu.be/repository/maven/")
+    }
 }
 
 dependencies {
@@ -14,7 +18,8 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
 
 
-    api("me.nullicorn:Nedit:2.2.0")
+    api("com.github.steveice10:opennbt:1.6")
+    implementation("org.jetbrains:annotations:24.0.1")
 
 }
 
