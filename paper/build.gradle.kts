@@ -42,6 +42,19 @@ dependencies {
 
 }
 
+tasks.named<ShadowJar>("shadowJar") {
+//    dependsOn(versions.map { project.project(":$it") }.map { it.tasks.named("build") })
+    from(Callable {
+        versionSpecific.resolve()
+            .map { f ->
+                zipTree(f).matching {
+                    exclude("META-INF/")
+                }
+            }
+    })
+}
+
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))

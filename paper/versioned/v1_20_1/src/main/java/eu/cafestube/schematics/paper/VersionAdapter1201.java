@@ -42,7 +42,7 @@ public class VersionAdapter1201 implements VersionAdapter {
 
     @Override
     public void setTileEntity(Location location, int dataVersion, NamespacedKey type, CompoundTag nbt) {
-        CraftWorld craftWorld = (CraftWorld) location.getChunk();
+        CraftWorld craftWorld = (CraftWorld) location.getWorld();
 
         BlockPos blockPos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
 
