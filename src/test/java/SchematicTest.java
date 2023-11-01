@@ -27,5 +27,15 @@ public class SchematicTest {
         assert schematic.equals(schematic1);
     }
 
+    @Test
+    public void TestBlockEntities() throws IOException {
+
+        Schematic schematic = SchematicIO.parseSchematic(getClass().getResourceAsStream("schematictest.schem"));
+
+        assert schematic.blockEntities().size() == 1;
+        assert schematic.blockEntities().values().stream().findFirst().get().id().equals("minecraft:chest");
+
+    }
+
 
 }

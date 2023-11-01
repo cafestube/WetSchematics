@@ -5,14 +5,17 @@ plugins {
 group = "eu.cafestube"
 version = "1.0-SNAPSHOT"
 
-repositories {
-    mavenCentral()
-    maven {
-        name = "cafestubeRepository"
-        url = uri("https://repo.cafestu.be/repository/maven/")
+allprojects {
+    repositories {
+        mavenCentral()
+        maven {
+            name = "cafestubeRepository"
+            url = uri("https://repo.cafestu.be/repository/maven/")
+        }
+        maven("https://repo.papermc.io/repository/maven-public/")
     }
-}
 
+}
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.9.1"))
     testImplementation("org.junit.jupiter:junit-jupiter")

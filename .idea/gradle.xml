@@ -8,6 +8,10 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/paper" />
+            <option value="$PROJECT_DIR$/paper/versioned" />
+            <option value="$PROJECT_DIR$/paper/versioned/v1_20_1" />
+            <option value="$PROJECT_DIR$/paper/versioned/v1_20_2" />
           </set>
         </option>
       </GradleProjectSettings>
