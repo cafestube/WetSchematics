@@ -44,14 +44,29 @@ public record Schematic(
             return null;
         }
 
-        int stateId;
-        if(biomeData.type() == BiomeDataType.TWO_DIMENSIONAL) {
-            stateId = biomeData.biomes()[x + z * width];
-        } else {
-            stateId = biomeData.biomes()[x + z * width + y * width * length];
+        Byte biomePaletteIndex = getBiomePaletteIndex(x, y, z);
+        if(biomePaletteIndex == null) {
+            return null;
         }
-        return biomeData.biomePalette().get(stateId);
+        return biomeData.biomePalette().get(biomePaletteIndex.intValue());
     }
+
+    public Byte getBiomePaletteIndex(int x, int z) {
+        return getBiomePaletteIndex(x, 0, z);
+    }
+
+    public Byte getBiomePaletteIndex(int x, int y, int z) {
+        if(biomeData == null) {
+            return null;
+        }
+
+        if(biomeData.type() == BiomeDataType.TWO_DIMENSIONAL) {
+            return biomeData.biomes()[x + z * width];
+        } else {
+            return biomeData.biomes()[x + z * width + y * width * length];
+        }
+    }
+
 
 
 }

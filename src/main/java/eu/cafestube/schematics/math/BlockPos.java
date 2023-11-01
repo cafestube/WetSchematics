@@ -8,4 +8,7 @@ public record BlockPos(int x, int y, int z) {
         return new BlockPos(array[0], array[1], array[2]);
     }
 
+    public int[] toArray() {
+        return new int[]{x, y, z};
+    }
 }

@@ -54,6 +54,15 @@ public class V1SchematicVersion implements SchematicVersion {
         return paletteTag.getValue().entrySet().stream().collect(Collectors.toMap(stringObjectEntry -> ((IntTag) stringObjectEntry.getValue()).getValue(), Map.Entry::getKey));
     }
 
+    public static void writeBlockPalette(Map<Integer, String> palette, CompoundTag compound) {
+        int paletteMax = palette.keySet().stream().max(Integer::compare).orElse(0);
+
+        compound.put(new IntTag("PaletteMax", paletteMax));
+        CompoundTag paletteTag = new CompoundTag("Palette");
+        palette.forEach((id, name) -> paletteTag.put(new IntTag(name, id)));
+        compound.put(paletteTag);
+    }
+
     private List<BlockEntity> parseBlockEntities(ListTag blockEntitiesTag) {
         if(blockEntitiesTag == null) {
             return new ArrayList<>();
