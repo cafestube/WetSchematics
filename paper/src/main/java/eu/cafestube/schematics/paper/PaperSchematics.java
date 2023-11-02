@@ -68,7 +68,7 @@ public class PaperSchematics {
                     if(blockData.equals("minecraft:air"))
                         continue;
 
-                    BlockState blockState = world.getBlockState(worldZ, worldY, worldZ);
+                    BlockState blockState = world.getBlockState(worldX, worldY, worldZ);
                     blockState.setBlockData(Bukkit.createBlockData(blockData));
                     blockState.update(true, false);
 
