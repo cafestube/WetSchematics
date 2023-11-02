@@ -75,8 +75,10 @@ public class PaperSchematics {
                     if(tileEntities) {
                         BlockEntity blockEntity = schematic.blockEntities().get(new BlockPos(x, y, z));
 
-                        placeBlockEntity(new Location(world, worldX, worldY, worldZ), schematic.dataVersion(),
-                                NamespacedKey.fromString(blockEntity.id()), blockEntity.extra());
+                        if(blockEntity != null) {
+                            placeBlockEntity(new Location(world, worldX, worldY, worldZ), schematic.dataVersion(),
+                                    NamespacedKey.fromString(blockEntity.id()), blockEntity.extra());
+                        }
                     }
                 }
 
