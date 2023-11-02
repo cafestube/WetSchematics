@@ -8,6 +8,7 @@ import eu.cafestube.schematics.schematic.Schematic;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
@@ -25,7 +26,7 @@ public class PaperSchematics {
     }
 
     public void placeSchematic(Location location, Schematic schematic) {
-        placeSchematic(location, schematic, false, true, true, true);
+        placeSchematic(location, schematic, false, true, true, true, false, false, true);
     }
 
     public void placeSchematic(
@@ -35,6 +36,20 @@ public class PaperSchematics {
             boolean tileEntities,
             boolean entities,
             boolean biomes
+    ) {
+        placeSchematic(location, schematic, ignoreOffset, tileEntities, entities, biomes, false, false, true);
+    }
+
+    public void placeSchematic(
+            Location location,
+            Schematic schematic,
+            boolean ignoreOffset,
+            boolean tileEntities,
+            boolean entities,
+            boolean biomes,
+            boolean placeAir,
+            boolean updateEntityAI,
+            boolean updateLighting
     ) {
         if(biomes && schematic.biomeData() == null)
             biomes = false;
@@ -65,12 +80,10 @@ public class PaperSchematics {
                         }
                     }
 
-                    if(blockData.equals("minecraft:air"))
+                    if(blockData.equals("minecraft:air") && !placeAir)
                         continue;
 
-                    BlockState blockState = world.getBlockState(worldX, worldY, worldZ);
-                    blockState.setBlockData(Bukkit.createBlockData(blockData));
-                    blockState.update(true, false);
+                    placeBlockFast(world, worldX, worldY, worldZ, Bukkit.createBlockData(blockData), updateEntityAI, updateLighting);
 
                     if(tileEntities) {
                         BlockEntity blockEntity = schematic.blockEntities().get(new BlockPos(x, y, z));
@@ -102,6 +115,14 @@ public class PaperSchematics {
             return;
         }
         VERSION_ADAPTER.spawnEntity(location, dataVersion, type, nbt);
+    }
+
+    public void placeBlockFast(World world, int x, int y, int z, BlockData blockData, boolean updateEntityAI, boolean updateLighting) {
+        if(VERSION_ADAPTER == null) {
+            world.getBlockAt(x, y, z).setBlockData(blockData, false);
+            return;
+        }
+        VERSION_ADAPTER.placeBlockFast(world, x, y, z, blockData, updateEntityAI, updateLighting);
     }
 
     public void placeBlockEntity(Location location, int dataVersion, NamespacedKey type, CompoundTag nbt) {

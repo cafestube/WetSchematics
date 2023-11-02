@@ -4,6 +4,8 @@ import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 
 import java.lang.reflect.InvocationTargetException;
@@ -13,6 +15,9 @@ public interface VersionAdapter {
     Entity spawnEntity(Location location, int dataVersion, NamespacedKey type, CompoundTag nbt);
 
     void setTileEntity(Location location, int dataVersion, NamespacedKey type, CompoundTag nbt);
+
+    void placeBlockFast(World world, int x, int y, int z, BlockData blockData, boolean updateEntityAI, boolean updateLighting);
+
 
     public static VersionAdapter create() {
         //Paper announced that they will be deprecating the old CraftBukkit package names
@@ -43,4 +48,5 @@ public interface VersionAdapter {
             return false;
         }
     }
+
 }

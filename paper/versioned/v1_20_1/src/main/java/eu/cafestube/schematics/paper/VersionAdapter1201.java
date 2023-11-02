@@ -7,13 +7,20 @@ import com.mojang.serialization.Dynamic;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.server.level.FullChunkStatus;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.World;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R1.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.v1_20_R1.entity.CraftEntity;
 import org.bukkit.craftbukkit.v1_20_R1.util.CraftMagicNumbers;
 import org.bukkit.entity.Entity;
@@ -38,6 +45,36 @@ public class VersionAdapter1201 implements VersionAdapter {
         mcEntity.load(tag);
 
         return entity;
+    }
+
+    private static final int UPDATE = 1;
+    private static final int NOTIFY = 2;
+
+    @Override
+    public void placeBlockFast(World world, int x, int y, int z, BlockData blockData, boolean updateEntityAI, boolean updateLighting) {
+        ServerLevel craftWorld = ((CraftWorld) world).getHandle();
+        BlockPos blockPos = new BlockPos(x, y, z);
+        LevelChunk chunk = craftWorld.getChunkAt(blockPos);
+
+        BlockState expectedBlockState = ((CraftBlockData) blockData).getState();
+        BlockState oldState = chunk.getBlockState(blockPos);
+        BlockState newState = chunk.setBlockState(blockPos, expectedBlockState, false, true);
+
+        if(newState != null) {
+            if(updateLighting) {
+                craftWorld.getChunkSource().getLightEngine().checkBlock(blockPos);
+            }
+
+            if(chunk.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)) {
+                if(updateEntityAI) {
+                    craftWorld.sendBlockUpdated(blockPos, oldState, newState, UPDATE | NOTIFY);
+                } else {
+                    craftWorld.getChunkSource().blockChanged(blockPos);
+                }
+            }
+
+        }
+
     }
 
     @Override
