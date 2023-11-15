@@ -52,7 +52,7 @@ dependencies {
 
 
     api("com.github.steveice10:opennbt:1.6")
-    implementation("org.jetbrains:annotations:24.0.1")
+    implementation("org.jetbrains:annotations:24.1.0")
 
 }
 
