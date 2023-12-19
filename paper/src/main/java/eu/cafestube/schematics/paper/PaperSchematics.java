@@ -19,6 +19,7 @@ public class PaperSchematics {
 
     private static final VersionAdapter VERSION_ADAPTER = VersionAdapter.create();
 
+    private boolean hasSentVersionAdapterError = false;
     private final JavaPlugin plugin;
 
     public PaperSchematics(JavaPlugin plugin) {
@@ -110,8 +111,9 @@ public class PaperSchematics {
     }
 
     public void placeEntity(Location location, int dataVersion, NamespacedKey type, CompoundTag nbt) {
-        if(VERSION_ADAPTER == null) {
+        if(VERSION_ADAPTER == null && !hasSentVersionAdapterError) {
             plugin.getLogger().log(Level.SEVERE, "Failed to find version adapter. Ignoring block entity.");
+            hasSentVersionAdapterError = true;
             return;
         }
         VERSION_ADAPTER.spawnEntity(location, dataVersion, type, nbt);
@@ -126,8 +128,9 @@ public class PaperSchematics {
     }
 
     public void placeBlockEntity(Location location, int dataVersion, NamespacedKey type, CompoundTag nbt) {
-        if(VERSION_ADAPTER == null) {
+        if(VERSION_ADAPTER == null && !hasSentVersionAdapterError) {
             plugin.getLogger().log(Level.SEVERE, "Failed to find version adapter. Ignoring block entity.");
+            hasSentVersionAdapterError = true;
             return;
         }
         VERSION_ADAPTER.setTileEntity(location, dataVersion, type, nbt);

@@ -9,7 +9,7 @@ plugins {
 
 
 group = "eu.cafestube"
-version = "1.0-SNAPSHOT"
+version = "1.0.1-SNAPSHOT"
 
 val versionSpecific = configurations.create("versionSpecific") {
     description = "Version Adapters to include in the JAR"
@@ -25,7 +25,7 @@ configurations.implementation {
     extendsFrom(versionSpecific)
 }
 
-val versions = listOf("v1_20_1", "v1_20_2")
+val versions = listOf("v1_20_1", "v1_20_2", "v1_20_4")
 
 
 

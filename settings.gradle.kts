@@ -13,4 +13,5 @@ buildscript {
 include("paper:versioned")
 include("paper:versioned:v1_20_1")
 include("paper:versioned:v1_20_2")
+include("paper:versioned:v1_20_4")
 include("paper")
