@@ -1,10 +1,10 @@
 package eu.cafestube.schematics.paper;
 
-import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import eu.cafestube.schematics.math.BlockPos;
 import eu.cafestube.schematics.schematic.BlockEntity;
 import eu.cafestube.schematics.schematic.Entity;
 import eu.cafestube.schematics.schematic.Schematic;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
@@ -109,7 +109,7 @@ public class PaperSchematics {
         }
     }
 
-    public void placeEntity(Location location, int dataVersion, NamespacedKey type, CompoundTag nbt) {
+    public void placeEntity(Location location, int dataVersion, NamespacedKey type, CompoundBinaryTag nbt) {
         if(VERSION_ADAPTER == null && !hasSentVersionAdapterError) {
             plugin.getLogger().log(Level.SEVERE, "Failed to find version adapter. Ignoring block entity.");
             hasSentVersionAdapterError = true;
@@ -126,7 +126,7 @@ public class PaperSchematics {
         VERSION_ADAPTER.placeBlockFast(world, x, y, z, blockData, updateEntityAI, updateLighting);
     }
 
-    public void placeBlockEntity(Location location, int dataVersion, NamespacedKey type, CompoundTag nbt) {
+    public void placeBlockEntity(Location location, int dataVersion, NamespacedKey type, CompoundBinaryTag nbt) {
         if(VERSION_ADAPTER == null && !hasSentVersionAdapterError) {
             plugin.getLogger().log(Level.SEVERE, "Failed to find version adapter. Ignoring block entity.");
             hasSentVersionAdapterError = true;

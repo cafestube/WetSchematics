@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "eu.cafestube"
-version = "1.0-SNAPSHOT"
+version = "2.0.0-SNAPSHOT"
 
 allprojects {
     repositories {
@@ -51,7 +51,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
 
 
-    api("com.github.steveice10:opennbt:1.6")
+    api("net.kyori:adventure-nbt:4.17.0")
     implementation("org.jetbrains:annotations:24.0.1")
 
 }

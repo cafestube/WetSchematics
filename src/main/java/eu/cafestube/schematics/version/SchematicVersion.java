@@ -1,13 +1,13 @@
 package eu.cafestube.schematics.version;
 
-import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import eu.cafestube.schematics.schematic.Schematic;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
 
 public interface SchematicVersion {
 
-    Schematic deserialize(CompoundTag compound);
+    Schematic deserialize(CompoundBinaryTag compound);
 
-    CompoundTag serialize(Schematic schematic);
+    CompoundBinaryTag serialize(Schematic schematic);
 
     int getVersion();
 

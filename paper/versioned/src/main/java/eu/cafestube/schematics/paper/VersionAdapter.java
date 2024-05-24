@@ -1,6 +1,6 @@
 package eu.cafestube.schematics.paper;
 
-import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -12,9 +12,9 @@ import java.lang.reflect.InvocationTargetException;
 
 public interface VersionAdapter {
 
-    Entity spawnEntity(Location location, int dataVersion, NamespacedKey type, CompoundTag nbt);
+    Entity spawnEntity(Location location, int dataVersion, NamespacedKey type, CompoundBinaryTag nbt);
 
-    void setTileEntity(Location location, int dataVersion, NamespacedKey type, CompoundTag nbt);
+    void setTileEntity(Location location, int dataVersion, NamespacedKey type, CompoundBinaryTag nbt);
 
     void placeBlockFast(World world, int x, int y, int z, BlockData blockData, boolean updateEntityAI, boolean updateLighting);
 

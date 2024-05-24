@@ -1,41 +1,41 @@
 package eu.cafestube.schematics.version;
 
-import com.github.steveice10.opennbt.tag.builtin.*;
 import eu.cafestube.schematics.math.BlockPos;
 import eu.cafestube.schematics.schematic.BlockEntity;
 import eu.cafestube.schematics.schematic.Schematic;
-import eu.cafestube.schematics.util.NBTUtil;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
+import net.kyori.adventure.nbt.IntBinaryTag;
+import net.kyori.adventure.nbt.ListBinaryTag;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class V1SchematicVersion implements SchematicVersion {
 
 
 
     @Override
-    public Schematic deserialize(CompoundTag compound) {
-        int width = NBTUtil.getShortOrDefault(compound, "Width", (short) 0) & 0xFFFF;
-        int height = NBTUtil.getShortOrDefault(compound, "Height", (short) 0) & 0xFFFF;
-        int length = NBTUtil.getShortOrDefault(compound, "Length", (short) 0) & 0xFFFF;
-        CompoundTag metadata = new CompoundTag("Metadata");
-        if(compound.contains("Metadata")) {
-            metadata = compound.get("Metadata");
-        }
+    public Schematic deserialize(CompoundBinaryTag compound) {
+        int width = compound.getShort("Width", (short) 0) & 0xFFFF;
+        int height = compound.getShort("Height", (short) 0) & 0xFFFF;
+        int length = compound.getShort("Length", (short) 0) & 0xFFFF;
+
+        CompoundBinaryTag metadata = compound.getCompound("Metadata");
 
         BlockPos offset = BlockPos.ZERO;
-        if(compound.contains("Offset")) {
-            int[] offsetArray = compound.<IntArrayTag>get("Offset").getValue();
+        if(compound.get("Offset") == null) {
+            int[] offsetArray = compound.getIntArray("Offset", new int[]{0, 0, 0});
             offset = BlockPos.fromArray(offsetArray);
         }
 
         Map<Integer, String> blockPalette = parseBlockPalette(compound);
 
-        byte[] blockData = compound.<ByteArrayTag>get("BlockData").getValue();
+        byte[] blockData = compound.getByteArray("BlockData");
 
-        ListTag blockEntitiesTag = compound.get("TileEntities");
+        ListBinaryTag blockEntitiesTag = compound.getList("TileEntities");
         List<BlockEntity> blockEntities = parseBlockEntities(blockEntitiesTag);
         Map<BlockPos, BlockEntity> blockEntityMap = blockEntities.stream().collect(Collectors.toMap(BlockEntity::pos, blockEntity -> blockEntity));
 
@@ -43,48 +43,49 @@ public class V1SchematicVersion implements SchematicVersion {
                 blockEntityMap, new ArrayList<>(), null);
     }
 
-    public static Map<Integer, String> parseBlockPalette(CompoundTag compound) {
-        int paletteMax = NBTUtil.getIntOrDefault(compound, "PaletteMax", 0);
-        CompoundTag paletteTag = compound.get("Palette");
+    public static Map<Integer, String> parseBlockPalette(CompoundBinaryTag compound) {
+        int paletteMax = compound.getInt("PaletteMax", 0);
+        CompoundBinaryTag paletteTag = compound.getCompound("Palette");
 
-        if(paletteTag == null || paletteTag.values().size() != paletteMax) {
+        if(paletteTag.size() != paletteMax) {
             throw new IllegalArgumentException("Palette is missing or does not expect the palette max");
         }
 
-        return paletteTag.getValue().entrySet().stream().collect(Collectors.toMap(stringObjectEntry -> ((IntTag) stringObjectEntry.getValue()).getValue(), Map.Entry::getKey));
+        return StreamSupport.stream(paletteTag.spliterator(), false)
+                .collect(Collectors.toMap(entry -> ((IntBinaryTag) entry.getValue()).value(), Map.Entry::getKey));
     }
 
-    public static void writeBlockPalette(Map<Integer, String> palette, CompoundTag compound) {
+    public static void writeBlockPalette(Map<Integer, String> palette, CompoundBinaryTag.Builder compound) {
         int paletteMax = palette.keySet().stream().max(Integer::compare).orElse(0) + 1;
 
-        compound.put(new IntTag("PaletteMax", paletteMax));
-        CompoundTag paletteTag = new CompoundTag("Palette");
-        palette.forEach((id, name) -> paletteTag.put(new IntTag(name, id)));
-        compound.put(paletteTag);
+        compound.putInt("PaletteMax", paletteMax);
+
+        CompoundBinaryTag.Builder paletteTag = CompoundBinaryTag.builder();
+        palette.forEach((id, name) -> paletteTag.put(name, IntBinaryTag.intBinaryTag(id)));
+        compound.put("Palette", paletteTag.build());
     }
 
-    private List<BlockEntity> parseBlockEntities(ListTag blockEntitiesTag) {
+    private List<BlockEntity> parseBlockEntities(ListBinaryTag blockEntitiesTag) {
         if(blockEntitiesTag == null) {
             return new ArrayList<>();
         }
-        return blockEntitiesTag.getValue().stream().map(tag -> parseBlockEntity((CompoundTag) tag)).collect(Collectors.toList());
+        return blockEntitiesTag.stream().map(tag -> parseBlockEntity((CompoundBinaryTag) tag)).collect(Collectors.toList());
     }
 
-    private BlockEntity parseBlockEntity(CompoundTag blockEntityTag) {
-        BlockPos pos = BlockPos.fromArray(blockEntityTag.<IntArrayTag>get("Pos").getValue());
-        String id = blockEntityTag.<StringTag>get("Id").getValue();
-        int contentVersion = NBTUtil.getIntOrDefault(blockEntityTag, "ContentVersion", 0);
+    private BlockEntity parseBlockEntity(CompoundBinaryTag blockEntityTag) {
+        BlockPos pos = BlockPos.fromArray(blockEntityTag.getIntArray("Pos"));
+        String id = blockEntityTag.getString("Id");
+        int contentVersion = blockEntityTag.getInt("ContentVersion", 0);
 
-        CompoundTag extra = blockEntityTag.clone();
-        extra.remove("Pos");
-        extra.remove("Id");
-        extra.remove("ContentVersion");
+        CompoundBinaryTag extra = blockEntityTag.remove("Pos")
+                .remove("Id")
+                .remove("ContentVersion");
 
         return new BlockEntity(contentVersion, pos, id, extra);
     }
 
     @Override
-    public CompoundTag serialize(Schematic schematic) {
+    public CompoundBinaryTag serialize(Schematic schematic) {
         throw new UnsupportedOperationException("Not implemented yet");
     }
 

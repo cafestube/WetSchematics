@@ -1,6 +1,5 @@
 package eu.cafestube.schematics.version;
 
-import com.github.steveice10.opennbt.tag.builtin.*;
 import eu.cafestube.schematics.math.BlockPos;
 import eu.cafestube.schematics.math.Pos;
 import eu.cafestube.schematics.schematic.BlockEntity;
@@ -8,52 +7,51 @@ import eu.cafestube.schematics.schematic.Entity;
 import eu.cafestube.schematics.schematic.Schematic;
 import eu.cafestube.schematics.schematic.biome.BiomeData;
 import eu.cafestube.schematics.schematic.biome.BiomeDataType;
-import eu.cafestube.schematics.util.NBTUtil;
+import net.kyori.adventure.nbt.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class V2SchematicVersion implements SchematicVersion {
 
     @Override
-    public Schematic deserialize(CompoundTag compound) {
-        int dataVersion = NBTUtil.getIntOrDefault(compound, "DataVersion", 0);
+    public Schematic deserialize(CompoundBinaryTag compound) {
+        int dataVersion = compound.getInt("DataVersion", 0);
 
-        int width = NBTUtil.getShortOrDefault(compound, "Width", (short) 0) & 0xFFFF;
-        int height = NBTUtil.getShortOrDefault(compound, "Height", (short) 0) & 0xFFFF;
-        int length = NBTUtil.getShortOrDefault(compound, "Length", (short) 0) & 0xFFFF;
-        CompoundTag metadata = new CompoundTag("Metadata");
-        if(compound.contains("Metadata")) {
-            metadata = compound.get("Metadata");
-        }
+        int width = compound.getShort("Width", (short) 0) & 0xFFFF;
+        int height = compound.getShort("Height", (short) 0) & 0xFFFF;
+        int length = compound.getShort("Length", (short) 0) & 0xFFFF;
+
+        CompoundBinaryTag metadata = compound.getCompound("Metadata");
 
         BlockPos offset = BlockPos.ZERO;
-        if(compound.contains("Offset")) {
-            int[] offsetArray = compound.<IntArrayTag>get("Offset").getValue();
+        if(compound.get("Offset") != null) {
+            int[] offsetArray = compound.getIntArray("Offset");
             offset = BlockPos.fromArray(offsetArray);
         }
 
         Map<Integer, String> blockPalette = V1SchematicVersion.parseBlockPalette(compound);
-        byte[] blockData = compound.<ByteArrayTag>get("BlockData").getValue();
+        byte[] blockData = compound.getByteArray("BlockData");
 
         Map<BlockPos, BlockEntity> blockEntityMap = parseBlockEntities(dataVersion, compound);
 
-        ListTag entitiesTag = compound.get("Entities");
+        ListBinaryTag entitiesTag = compound.getList("Entities");
         List<Entity> entities = parseEntities(entitiesTag);
 
 
         BiomeData biomeData = null;
 
-        if(compound.contains("BiomeData")) {
-            int biomePaletteMax = NBTUtil.getIntOrDefault(compound, "BiomePaletteMax", 0);
-            CompoundTag biomePaletteTag = compound.get("BiomePalette");
-            if(biomePaletteTag == null || biomePaletteTag.values().size() != biomePaletteMax) {
+        if(compound.get("BiomeData") != null) {
+            int biomePaletteMax = compound.getInt("BiomePaletteMax", 0);
+            CompoundBinaryTag biomePaletteTag = compound.getCompound("BiomePalette");
+            if(biomePaletteTag.size() != biomePaletteMax) {
                 throw new IllegalArgumentException("Biome palette is missing or does not expect the palette max");
             }
-            Map<Integer, String> biomePalette = biomePaletteTag.getValue().entrySet().stream()
-                    .collect(Collectors.toMap(stringObjectEntry -> ((IntTag) stringObjectEntry.getValue()).getValue(), Map.Entry::getKey));
+            Map<Integer, String> biomePalette = StreamSupport.stream(biomePaletteTag.spliterator(), true)
+                    .collect(Collectors.toMap(stringObjectEntry -> ((IntBinaryTag) stringObjectEntry.getValue()).value(), Map.Entry::getKey));
 
-            byte[] biomeDataBytes = compound.<ByteArrayTag>get("BiomeData").getValue();
+            byte[] biomeDataBytes = compound.getByteArray("BiomeData");
 
             biomeData = new BiomeData(biomePalette, biomeDataBytes, BiomeDataType.TWO_DIMENSIONAL);
         }
@@ -64,107 +62,86 @@ public class V2SchematicVersion implements SchematicVersion {
     }
 
 
-    public static List<Entity> parseEntities(ListTag entitiesTag) {
+    public static List<Entity> parseEntities(ListBinaryTag entitiesTag) {
         if(entitiesTag == null) {
             return new ArrayList<>();
         }
-        return entitiesTag.getValue().stream().map(tag -> parseEntity((CompoundTag) tag)).collect(Collectors.toList());
+        return entitiesTag.stream().map(tag -> parseEntity((CompoundBinaryTag) tag)).collect(Collectors.toList());
     }
 
-    public static Entity parseEntity(CompoundTag tag) {
-        CompoundTag extra = tag.clone();
-        extra.remove("Id");
-        extra.remove("Pos");
+    public static Entity parseEntity(CompoundBinaryTag tag) {
+        CompoundBinaryTag extra = tag.remove("Id")
+                .remove("Pos");
 
-        return new Entity(Pos.fromDoubleList(tag.get("Pos")), tag.<StringTag>get("Id").getValue(), extra);
+        return new Entity(Pos.fromDoubleList(tag.getList("Pos")), tag.getString("Id"), extra);
     }
 
-    public static ListTag serializeEntities(List<Entity> entities) {
-        ListTag entitiesTag = new ListTag("Entities", CompoundTag.class);
-        for (Entity entity : entities) {
-            entitiesTag.add(serializeEntity(entity));
-        }
-        return entitiesTag;
+    public static ListBinaryTag serializeEntities(List<Entity> entities) {
+        return ListBinaryTag.from(entities.stream().map(V2SchematicVersion::serializeEntity).toList());
     }
 
-    private static Tag serializeEntity(Entity entity) {
-        Map<String, Tag> extraData = new HashMap<>(entity.extra().getValue());
-        CompoundTag entityTag = new CompoundTag("Entity", extraData);
-        entityTag.put(new StringTag("Id", entity.id()));
-        entityTag.put(new ListTag("Pos", List.of(new DoubleTag("x", entity.pos().x()),
-                new DoubleTag("y", entity.pos().y()), new DoubleTag("z", entity.pos().z()))));
-        return entityTag;
+    private static CompoundBinaryTag serializeEntity(Entity entity) {
+        return entity.extra()
+                .putString("Id", entity.id())
+                .put("Pos", ListBinaryTag.from(List.of(DoubleBinaryTag.doubleBinaryTag(entity.pos().x()),
+                    DoubleBinaryTag.doubleBinaryTag(entity.pos().y()), DoubleBinaryTag.doubleBinaryTag(entity.pos().z()))));
     }
 
 
-    public static Map<BlockPos, BlockEntity> parseBlockEntities(int dataVersion, CompoundTag compound) {
-        ListTag blockEntitiesTag = compound.get("BlockEntities");
-        if(blockEntitiesTag == null) {
-            return new HashMap<>();
-        }
+    public static Map<BlockPos, BlockEntity> parseBlockEntities(int dataVersion, CompoundBinaryTag compound) {
+        ListBinaryTag blockEntitiesTag = compound.getList("BlockEntities");
         List<BlockEntity> blockEntities = parseBlockEntities(dataVersion, blockEntitiesTag);
         return blockEntities.stream().collect(Collectors.toMap(BlockEntity::pos, blockEntity -> blockEntity));
     }
 
-    public static ListTag serializeBlockEntities(Map<BlockPos, BlockEntity> entities) {
-        ListTag blockEntities = new ListTag("BlockEntities", CompoundTag.class);
-        for (BlockEntity value : entities.values()) {
-            blockEntities.add(serializeBlockEntity(value));
-        }
-        return blockEntities;
+    public static ListBinaryTag serializeBlockEntities(Map<BlockPos, BlockEntity> entities) {
+        return ListBinaryTag.from(entities.values().stream().map(V2SchematicVersion::serializeBlockEntity).toList());
     }
 
-    public static CompoundTag serializeBlockEntity(BlockEntity blockEntity) {
-        Map<String, Tag> extraData = new HashMap<>(blockEntity.extra().getValue());
-
-        CompoundTag entity = new CompoundTag("BlockEntity", extraData);
-        entity.put(new IntArrayTag("Pos", blockEntity.pos().toArray()));
-        entity.put(new StringTag("Id", blockEntity.id()));
-        return entity;
+    public static CompoundBinaryTag serializeBlockEntity(BlockEntity blockEntity) {
+        return blockEntity.extra().putIntArray("Pos", blockEntity.pos().toArray()).putString("Id", blockEntity.id());
     }
 
-    private static List<BlockEntity> parseBlockEntities(int dataVersion, ListTag blockEntitiesTag) {
-        return blockEntitiesTag.getValue().stream().map(tag -> parseBlockEntity(dataVersion, (CompoundTag) tag)).collect(Collectors.toList());
+    private static List<BlockEntity> parseBlockEntities(int dataVersion, ListBinaryTag blockEntitiesTag) {
+        return blockEntitiesTag.stream().map(tag -> parseBlockEntity(dataVersion, (CompoundBinaryTag) tag)).collect(Collectors.toList());
     }
 
-    private static BlockEntity parseBlockEntity(int dataVersion, CompoundTag blockEntityTag) {
-        CompoundTag extra = blockEntityTag.clone();
-        extra.remove("Id");
-        extra.remove("Pos");
-        return new BlockEntity(dataVersion, BlockPos.fromArray(blockEntityTag.<IntArrayTag>get("Pos").getValue()),
-                blockEntityTag.<StringTag>get("Id").getValue(), extra);
+    private static BlockEntity parseBlockEntity(int dataVersion, CompoundBinaryTag blockEntityTag) {
+        CompoundBinaryTag extra = blockEntityTag.remove("Id").remove("Pos");
+        return new BlockEntity(dataVersion, BlockPos.fromArray(blockEntityTag.getIntArray("Pos")),
+                blockEntityTag.getString("Id"), extra);
     }
 
     @Override
-    public CompoundTag serialize(Schematic schematic) {
-        CompoundTag compound = new CompoundTag("Schematic");
-        compound.put(new IntTag("Version", getVersion()));
-        compound.put(new IntTag("DataVersion", schematic.dataVersion()));
+    public CompoundBinaryTag serialize(Schematic schematic) {
+        CompoundBinaryTag.Builder compound = CompoundBinaryTag.builder();
+        compound.putInt("Version", getVersion());
+        compound.putInt("DataVersion", schematic.dataVersion());
 
-        compound.put(new ShortTag("Width", (short) schematic.width()));
-        compound.put(new ShortTag("Height", (short) schematic.height()));
-        compound.put(new ShortTag("Length", (short) schematic.length()));
+        compound.putShort("Width", (short) schematic.width());
+        compound.putShort("Height", (short) schematic.height());
+        compound.putShort("Length", (short) schematic.length());
 
-        compound.put(schematic.metadata());
+        compound.put("Metadata", schematic.metadata());
 
-        compound.put(new IntArrayTag("Offset", schematic.offset().toArray()));
+        compound.putIntArray("Offset", schematic.offset().toArray());
 
-        compound.put(new ByteArrayTag("BlockData", schematic.blockData()));
+        compound.putByteArray("BlockData", schematic.blockData());
 
         V1SchematicVersion.writeBlockPalette(schematic.blockStatePalette(), compound);
 
-        compound.put(serializeBlockEntities(schematic.blockEntities()));
-        compound.put(serializeEntities(schematic.entities()));
+        compound.put("BlockEntities", serializeBlockEntities(schematic.blockEntities()));
+        compound.put("Entities", serializeEntities(schematic.entities()));
 
         if(schematic.biomeData() != null) {
-            compound.put(new IntTag("BiomePaletteMax", schematic.biomeData().biomePalette().keySet().stream().max(Integer::compare).orElse(0) + 1));
+            compound.putInt("BiomePaletteMax", schematic.biomeData().biomePalette().keySet().stream().max(Integer::compare).orElse(0) + 1);
 
-            CompoundTag biomePaletteTag = new CompoundTag("BiomePalette");
-            schematic.biomeData().biomePalette().forEach((id, name) -> biomePaletteTag.put(new IntTag(name, id)));
-            compound.put(biomePaletteTag);
+            CompoundBinaryTag.Builder biomePaletteTag = CompoundBinaryTag.builder();
+            schematic.biomeData().biomePalette().forEach((id, name) -> biomePaletteTag.putInt(name, id));
+            compound.put("BiomePalette", biomePaletteTag.build());
 
             if(schematic.biomeData().type() == BiomeDataType.TWO_DIMENSIONAL) {
-                compound.put(new ByteArrayTag("BiomeData", schematic.biomeData().biomes()));
+                compound.putByteArray("BiomeData", schematic.biomeData().biomes());
             } else {
                 //Convert from 3d to 2d by using the biome at y 0
                 byte[] convertedData = new byte[schematic.width() * schematic.length()];
@@ -175,11 +152,11 @@ public class V2SchematicVersion implements SchematicVersion {
                     }
                 }
 
-                compound.put(new ByteArrayTag("BiomeData", convertedData));
+                compound.putByteArray("BiomeData", convertedData);
             }
         }
 
-        return compound;
+        return compound.build();
     }
 
     @Override

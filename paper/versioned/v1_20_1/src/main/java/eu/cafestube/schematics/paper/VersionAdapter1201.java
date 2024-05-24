@@ -1,12 +1,22 @@
 package eu.cafestube.schematics.paper;
 
-import com.github.steveice10.opennbt.conversion.builtin.custom.ShortArrayTagConverter;
-import com.github.steveice10.opennbt.tag.builtin.*;
-import com.github.steveice10.opennbt.tag.builtin.custom.ShortArrayTag;
 import com.mojang.serialization.Dynamic;
+import net.kyori.adventure.nbt.*;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.ByteArrayTag;
+import net.minecraft.nbt.ByteTag;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.DoubleTag;
+import net.minecraft.nbt.FloatTag;
+import net.minecraft.nbt.IntArrayTag;
+import net.minecraft.nbt.IntTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.LongArrayTag;
+import net.minecraft.nbt.LongTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.ShortTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixers;
@@ -29,15 +39,15 @@ import org.bukkit.entity.EntityType;
 public class VersionAdapter1201 implements VersionAdapter {
 
     @Override
-    public Entity spawnEntity(Location location, int dataVersion, NamespacedKey type, CompoundTag nbt) {
+    public Entity spawnEntity(Location location, int dataVersion, NamespacedKey type, CompoundBinaryTag nbt) {
         EntityType entityType = Registry.ENTITY_TYPE.get(type);
         if(entityType == null) throw new IllegalArgumentException("Unknown entity type: " + type);
         Entity entity = location.getWorld().spawnEntity(location, entityType);
 
-        net.minecraft.nbt.CompoundTag tag = convertNBTtoMC(nbt);
+        CompoundTag tag = convertNBTtoMC(nbt);
 
         if(dataVersion != -1 && dataVersion < CraftMagicNumbers.INSTANCE.getDataVersion()) {
-            tag = (net.minecraft.nbt.CompoundTag) DataFixers.getDataFixer().update(References.ENTITY,
+            tag = (CompoundTag) DataFixers.getDataFixer().update(References.ENTITY,
                     new Dynamic(NbtOps.INSTANCE, tag), dataVersion, CraftMagicNumbers.INSTANCE.getDataVersion()).getValue();
         }
 
@@ -78,16 +88,16 @@ public class VersionAdapter1201 implements VersionAdapter {
     }
 
     @Override
-    public void setTileEntity(Location location, int dataVersion, NamespacedKey type, CompoundTag nbt) {
+    public void setTileEntity(Location location, int dataVersion, NamespacedKey type, CompoundBinaryTag nbt) {
         CraftWorld craftWorld = (CraftWorld) location.getWorld();
 
         BlockPos blockPos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
 
-        net.minecraft.nbt.CompoundTag tag = convertNBTtoMC(nbt);
+        CompoundTag tag = convertNBTtoMC(nbt);
         tag.putString("id", type.toString());
 
         if(dataVersion != -1 && dataVersion < CraftMagicNumbers.INSTANCE.getDataVersion()) {
-            tag = (net.minecraft.nbt.CompoundTag) DataFixers.getDataFixer().update(References.BLOCK_ENTITY,
+            tag = (CompoundTag) DataFixers.getDataFixer().update(References.BLOCK_ENTITY,
                     new Dynamic(NbtOps.INSTANCE, tag), dataVersion, CraftMagicNumbers.INSTANCE.getDataVersion()).getValue();
         }
 
@@ -98,50 +108,41 @@ public class VersionAdapter1201 implements VersionAdapter {
         craftWorld.getHandle().setBlockEntity(blockEntity);
     }
 
-    private net.minecraft.nbt.CompoundTag convertNBTtoMC(CompoundTag nbt) {
-        net.minecraft.nbt.CompoundTag mcNBT = new net.minecraft.nbt.CompoundTag();
-
-        for(String key : nbt.getValue().keySet()) {
-            net.minecraft.nbt.Tag tag = convertTag(nbt.get(key));
-            if(tag == null) continue;
-
-            mcNBT.put(key, tag);
-        }
-
+    private CompoundTag convertNBTtoMC(CompoundBinaryTag nbt) {
+        CompoundTag mcNBT = new CompoundTag();
+        nbt.forEach(stringEntry -> mcNBT.put(stringEntry.getKey(), convertTag(stringEntry.getValue())));
         return mcNBT;
     }
 
-    private net.minecraft.nbt.Tag convertTag(Tag tag) {
-        if(tag instanceof CompoundTag compoundTag) {
+    private Tag convertTag(BinaryTag tag) {
+        if(tag instanceof CompoundBinaryTag compoundTag) {
             return convertNBTtoMC(compoundTag);
-        } else if(tag instanceof IntTag intTag) {
-            return net.minecraft.nbt.IntTag.valueOf(intTag.getValue());
-        } else if(tag instanceof FloatTag floatTag) {
-            return net.minecraft.nbt.FloatTag.valueOf(floatTag.getValue());
-        } else if(tag instanceof DoubleTag doubleTag) {
-            return net.minecraft.nbt.DoubleTag.valueOf(doubleTag.getValue());
-        } else if(tag instanceof LongTag longTag) {
-            return net.minecraft.nbt.LongTag.valueOf(longTag.getValue());
-        } else if(tag instanceof ShortTag shortTag) {
-            return net.minecraft.nbt.ShortTag.valueOf(shortTag.getValue());
-        } else if(tag instanceof StringTag stringTag) {
-            return net.minecraft.nbt.StringTag.valueOf(stringTag.getValue());
-        } else if(tag instanceof ByteArrayTag byteArrayTag) {
-            return new net.minecraft.nbt.ByteArrayTag(byteArrayTag.getValue());
-        } else if(tag instanceof IntArrayTag intArrayTag) {
-            return new net.minecraft.nbt.IntArrayTag(intArrayTag.getValue());
-        } else if(tag instanceof LongArrayTag longArrayTag) {
-            return new net.minecraft.nbt.LongArrayTag(longArrayTag.getValue());
-        } else if(tag instanceof ListTag listTag) {
-            net.minecraft.nbt.ListTag mcListTag = new net.minecraft.nbt.ListTag();
-            for(Tag listTagElement : listTag.getValue()) {
-                mcListTag.add(convertTag(listTagElement));
-            }
+        } else if(tag instanceof IntBinaryTag intTag) {
+            return IntTag.valueOf(intTag.value());
+        } else if(tag instanceof FloatBinaryTag floatTag) {
+            return FloatTag.valueOf(floatTag.value());
+        } else if(tag instanceof DoubleBinaryTag doubleTag) {
+            return DoubleTag.valueOf(doubleTag.value());
+        } else if(tag instanceof LongBinaryTag longTag) {
+            return LongTag.valueOf(longTag.value());
+        } else if(tag instanceof ShortBinaryTag shortTag) {
+            return ShortTag.valueOf(shortTag.value());
+        } else if(tag instanceof StringBinaryTag stringTag) {
+            return StringTag.valueOf(stringTag.value());
+        } else if(tag instanceof ByteArrayBinaryTag byteArrayTag) {
+            return new ByteArrayTag(byteArrayTag.value());
+        } else if(tag instanceof IntArrayBinaryTag intArrayTag) {
+            return new IntArrayTag(intArrayTag.value());
+        } else if(tag instanceof LongArrayBinaryTag longArrayTag) {
+            return new LongArrayTag(longArrayTag.value());
+        } else if(tag instanceof ListBinaryTag listTag) {
+            ListTag mcListTag = new ListTag();
+            listTag.forEach(binaryTag -> mcListTag.add(convertTag(binaryTag)));
             return mcListTag;
-        } else if(tag instanceof ByteTag byteTag) {
-            return net.minecraft.nbt.ByteTag.valueOf(byteTag.getValue());
+        } else if(tag instanceof ByteBinaryTag byteTag) {
+            return ByteTag.valueOf(byteTag.value());
         }
-        return null;
+        throw new IllegalArgumentException("Unknown tag type: " + tag.getClass());
     }
 
 }

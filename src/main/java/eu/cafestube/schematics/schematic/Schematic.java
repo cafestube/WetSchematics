@@ -1,9 +1,9 @@
 package eu.cafestube.schematics.schematic;
 
-import com.github.steveice10.opennbt.tag.builtin.CompoundTag;
 import eu.cafestube.schematics.math.BlockPos;
 import eu.cafestube.schematics.schematic.biome.BiomeData;
 import eu.cafestube.schematics.schematic.biome.BiomeDataType;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
@@ -16,7 +16,7 @@ public record Schematic(
         int width,
         int height,
         int length,
-        CompoundTag metadata,
+        CompoundBinaryTag metadata,
         BlockPos offset,
 
         Map<Integer, String> blockStatePalette,
