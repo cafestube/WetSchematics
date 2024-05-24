@@ -52,7 +52,7 @@ dependencies {
 
 
     api("net.kyori:adventure-nbt:4.17.0")
-    implementation("org.jetbrains:annotations:24.0.1")
+    implementation("org.jetbrains:annotations:24.1.0")
 
 }
 
