@@ -11,7 +11,7 @@ plugins {
 group = "eu.cafestube"
 version = "1.0.1-SNAPSHOT"
 
-val versionSpecific = configurations.create("versionSpecific") {
+val obfuscatedVersionSpecific = configurations.create("obfuscatedVersionSpecific") {
     description = "Version Adapters to include in the JAR"
     isCanBeConsumed = false
     isCanBeResolved = true
@@ -22,10 +22,11 @@ val versionSpecific = configurations.create("versionSpecific") {
 }
 
 configurations.implementation {
-    extendsFrom(versionSpecific)
+    extendsFrom(obfuscatedVersionSpecific)
 }
 
-val versions = listOf("v1_20_1", "v1_20_2", "v1_20_4")
+val obfuscatedVersions = listOf("v1_20_1", "v1_20_2", "v1_20_4")
+val versions = listOf("v1_20_6")
 
 
 
@@ -35,8 +36,11 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.20.2-R0.1-SNAPSHOT")
 
     compileOnly(project(":"))
+    obfuscatedVersions.forEach {
+        obfuscatedVersionSpecific(project(":paper:versioned:$it"))
+    }
     versions.forEach {
-        versionSpecific(project(":paper:versioned:$it"))
+        implementation(project(":paper:versioned:$it"))
     }
     implementation(project(":paper:versioned"))
 
@@ -45,7 +49,7 @@ dependencies {
 tasks.named<ShadowJar>("shadowJar") {
     dependsOn(versions.map { ":paper:versioned:${it}:build" })
     from(Callable {
-        versionSpecific.resolve()
+        obfuscatedVersionSpecific.resolve()
             .map { f ->
                 zipTree(f).matching {
                     exclude("META-INF/")
@@ -57,7 +61,7 @@ tasks.named<ShadowJar>("shadowJar") {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
     withSourcesJar()
 }
