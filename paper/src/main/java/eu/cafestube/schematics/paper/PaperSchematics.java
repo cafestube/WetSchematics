@@ -8,6 +8,7 @@ import eu.cafestube.schematics.schematic.Entity;
 import eu.cafestube.schematics.schematic.Schematic;
 import net.kyori.adventure.nbt.BinaryTagIO;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
+import net.kyori.adventure.nbt.ListBinaryTag;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
@@ -82,6 +83,9 @@ public class PaperSchematics {
         Location origin = ignoreOffset ? location : location.clone()
                 .add(new Vector(schematic.offset().x(), schematic.offset().y(), schematic.offset().z()));
 
+        Location negOrigin = !ignoreOffset ? location : location.clone()
+                .subtract(new Vector(schematic.offset().x(), schematic.offset().y(), schematic.offset().z()));
+
         World world = origin.getWorld();
 
         for (int x = 0; x < schematic.width(); x++) {
@@ -133,25 +137,29 @@ public class PaperSchematics {
 
         if(entities) {
             for (Entity entity : schematic.entities()) {
-                double worldX = origin.getBlockX() + entity.pos().x();
-                double worldY = origin.getBlockY() + entity.pos().y();
-                double worldZ = origin.getBlockZ() + entity.pos().z();
+                double worldX = negOrigin.getBlockX() + entity.pos().x();
+                double worldY = negOrigin.getBlockY() + entity.pos().y();
+                double worldZ = negOrigin.getBlockZ() + entity.pos().z();
 
                 CompoundBinaryTag extra = entity.extra()
-                        .putString("Id", entity.id());
+                        .putString("id", entity.id());
 
                 if(!keepEntityUUIDs) {
                     extra = extra.remove("UUID");
                 }
 
+                ListBinaryTag tag = extra.getList("Rotation");
+                float yaw = tag.getFloat(0);
+                float pitch = tag.getFloat(1);
+
                 if(entityTransformer != null) {
-                    extra = entityTransformer.transform(new Location(world, worldX, worldY, worldZ), NamespacedKey.fromString(entity.id()), extra);
+                    extra = entityTransformer.transform(new Location(world, worldX, worldY, worldZ, yaw, pitch), NamespacedKey.fromString(entity.id()), extra);
                     if(extra == null)
                         continue;
                 }
 
 
-                placeEntity(new Location(world, worldX, worldY, worldZ), schematic.dataVersion(), extra, entityTransformer);
+                placeEntity(new Location(world, worldX, worldY, worldZ, yaw, pitch), schematic.dataVersion(), extra, entityTransformer);
             }
         }
     }
