@@ -24,37 +24,24 @@ import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
-import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_20_R1.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.v1_20_R1.entity.CraftEntity;
 import org.bukkit.craftbukkit.v1_20_R1.util.CraftMagicNumbers;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 
 public class VersionAdapter1201 implements VersionAdapter {
 
     @Override
-    public Entity spawnEntity(Location location, int dataVersion, NamespacedKey type, CompoundBinaryTag nbt) {
-        EntityType entityType = Registry.ENTITY_TYPE.get(type);
-        if(entityType == null) throw new IllegalArgumentException("Unknown entity type: " + type);
-        Entity entity = location.getWorld().spawnEntity(location, entityType);
+    public Entity deserializeEntity(CompoundBinaryTag nbt, int dataVersion, World world) {
+        net.minecraft.nbt.CompoundTag compound = convertNBTtoMC(nbt);
 
-        CompoundTag tag = convertNBTtoMC(nbt);
+        compound = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ENTITY,
+                compound, dataVersion, Bukkit.getUnsafe().getDataVersion());
 
-        if(dataVersion != -1 && dataVersion < CraftMagicNumbers.INSTANCE.getDataVersion()) {
-            tag = (CompoundTag) DataFixers.getDataFixer().update(References.ENTITY,
-                    new Dynamic(NbtOps.INSTANCE, tag), dataVersion, CraftMagicNumbers.INSTANCE.getDataVersion()).getValue();
-        }
-
-        net.minecraft.world.entity.Entity mcEntity = ((CraftEntity) entity).getHandle();
-        mcEntity.load(tag);
-
-        return entity;
+        return net.minecraft.world.entity.EntityType.create(compound, ((CraftWorld) world).getHandle())
+                .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?")).getBukkitEntity();
     }
 
     private static final int UPDATE = 1;

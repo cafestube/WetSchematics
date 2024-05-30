@@ -6,15 +6,19 @@ import eu.cafestube.schematics.paper.transformer.SchematicEntityTransformer;
 import eu.cafestube.schematics.schematic.BlockEntity;
 import eu.cafestube.schematics.schematic.Entity;
 import eu.cafestube.schematics.schematic.Schematic;
+import net.kyori.adventure.nbt.BinaryTagIO;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
 import javax.xml.validation.Schema;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Objects;
 import java.util.logging.Level;
 
@@ -133,7 +137,8 @@ public class PaperSchematics {
                 double worldY = origin.getBlockY() + entity.pos().y();
                 double worldZ = origin.getBlockZ() + entity.pos().z();
 
-                CompoundBinaryTag extra = entity.extra();
+                CompoundBinaryTag extra = entity.extra()
+                        .putString("Id", entity.id());
 
                 if(!keepEntityUUIDs) {
                     extra = extra.remove("UUID");
@@ -146,26 +151,32 @@ public class PaperSchematics {
                 }
 
 
-                placeEntity(new Location(world, worldX, worldY, worldZ), schematic.dataVersion(), NamespacedKey.fromString(entity.id()), extra, entityTransformer);
+                placeEntity(new Location(world, worldX, worldY, worldZ), schematic.dataVersion(), extra, entityTransformer);
             }
         }
     }
 
-    public void placeEntity(Location location, int dataVersion, NamespacedKey type, CompoundBinaryTag nbt) {
-        placeEntity(location, dataVersion, type, nbt, null);
-    }
+    public void placeEntity(Location location, int dataVersion, CompoundBinaryTag nbt, @Nullable SchematicEntityTransformer entityTransformer) {
+        org.bukkit.entity.Entity entity;
+        if(VERSION_ADAPTER == null) {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            try {
+                BinaryTagIO.writer().write(nbt.putInt("DataVersion", dataVersion), outputStream);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
-    public void placeEntity(Location location, int dataVersion, NamespacedKey type, CompoundBinaryTag nbt, @Nullable SchematicEntityTransformer entityTransformer) {
-        if(VERSION_ADAPTER == null && !hasSentVersionAdapterError) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to find version adapter. Ignoring block entity.");
-            hasSentVersionAdapterError = true;
-            return;
+            //noinspection deprecation
+            entity = Bukkit.getUnsafe().deserializeEntity(outputStream.toByteArray(), location.getWorld());
+        } else {
+            entity = VERSION_ADAPTER.deserializeEntity(nbt, dataVersion, location.getWorld());
         }
-        org.bukkit.entity.Entity entity = VERSION_ADAPTER.spawnEntity(location, dataVersion, type, nbt);
 
         if(entityTransformer != null) {
             entityTransformer.transform(entity);
         }
+
+        entity.spawnAt(location, CreatureSpawnEvent.SpawnReason.CUSTOM);
     }
 
     public void placeBlockFast(World world, int x, int y, int z, BlockData blockData, boolean updateEntityAI, boolean updateLighting) {

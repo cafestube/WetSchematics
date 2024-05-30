@@ -12,7 +12,7 @@ import java.lang.reflect.InvocationTargetException;
 
 public interface VersionAdapter {
 
-    Entity spawnEntity(Location location, int dataVersion, NamespacedKey type, CompoundBinaryTag nbt);
+    Entity deserializeEntity(CompoundBinaryTag nbt, int dataVersion, World world);
 
     void setTileEntity(Location location, int dataVersion, NamespacedKey type, CompoundBinaryTag nbt);
 
@@ -48,5 +48,4 @@ public interface VersionAdapter {
             return false;
         }
     }
-
 }
