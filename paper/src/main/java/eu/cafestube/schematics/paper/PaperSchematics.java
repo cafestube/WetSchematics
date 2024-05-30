@@ -1,6 +1,8 @@
 package eu.cafestube.schematics.paper;
 
 import eu.cafestube.schematics.math.BlockPos;
+import eu.cafestube.schematics.paper.transformer.SchematicBlockTransformer;
+import eu.cafestube.schematics.paper.transformer.SchematicEntityTransformer;
 import eu.cafestube.schematics.schematic.BlockEntity;
 import eu.cafestube.schematics.schematic.Entity;
 import eu.cafestube.schematics.schematic.Schematic;
@@ -10,6 +12,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.logging.Level;
@@ -51,6 +54,22 @@ public class PaperSchematics {
             boolean updateEntityAI,
             boolean updateLighting
     ) {
+        placeSchematic(location, schematic, ignoreOffset, tileEntities, entities, biomes, placeAir, updateEntityAI, updateLighting, null, null);
+    }
+
+    public void placeSchematic(
+            Location location,
+            Schematic schematic,
+            boolean ignoreOffset,
+            boolean tileEntities,
+            boolean entities,
+            boolean biomes,
+            boolean placeAir,
+            boolean updateEntityAI,
+            boolean updateLighting,
+            @Nullable SchematicBlockTransformer blockTransformer,
+            @Nullable SchematicEntityTransformer entityTransformer
+    ) {
         if(biomes && schematic.biomeData() == null)
             biomes = false;
 
@@ -83,9 +102,17 @@ public class PaperSchematics {
                     if(blockData.equals("minecraft:air") && !placeAir)
                         continue;
 
-                    placeBlockFast(world, worldX, worldY, worldZ, Bukkit.createBlockData(blockData), updateEntityAI, updateLighting);
+                    BlockData data = Bukkit.createBlockData(blockData);
+                    Material initialType = data.getMaterial();
+                    if(blockTransformer != null) {
+                        data = blockTransformer.transform(world.getBlockAt(worldX, worldY, worldZ), data);
+                        if(data == null)
+                            continue;
+                    }
 
-                    if(tileEntities) {
+                    placeBlockFast(world, worldX, worldY, worldZ, data, updateEntityAI, updateLighting);
+
+                    if(tileEntities && data.getMaterial().equals(initialType)) {
                         BlockEntity blockEntity = schematic.blockEntities().get(new BlockPos(x, y, z));
 
                         if(blockEntity != null) {
@@ -104,7 +131,14 @@ public class PaperSchematics {
                 double worldY = origin.getBlockY() + entity.pos().y();
                 double worldZ = origin.getBlockZ() + entity.pos().z();
 
-                placeEntity(new Location(world, worldX, worldY, worldZ), schematic.dataVersion(), NamespacedKey.fromString(entity.id()), entity.extra());
+                CompoundBinaryTag extra = entity.extra();
+                if(entityTransformer != null) {
+                    extra = entityTransformer.transform(new Location(world, worldX, worldY, worldZ), NamespacedKey.fromString(entity.id()), extra);
+                    if(extra == null)
+                        continue;
+                }
+
+                placeEntity(new Location(world, worldX, worldY, worldZ), schematic.dataVersion(), NamespacedKey.fromString(entity.id()), extra);
             }
         }
     }

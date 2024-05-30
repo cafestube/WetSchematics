@@ -19,7 +19,7 @@ public interface VersionAdapter {
     void placeBlockFast(World world, int x, int y, int z, BlockData blockData, boolean updateEntityAI, boolean updateLighting);
 
 
-    public static VersionAdapter create() {
+    static VersionAdapter create() {
         //Paper announced that they will be deprecating the old CraftBukkit package names
         //in the future but getMinecraftVersion does not exist in spigot
 
