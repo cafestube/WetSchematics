@@ -28,9 +28,17 @@ public class CombinedSchematicEntityTransformer implements SchematicEntityTransf
     }
 
     @Override
-    public void transform(Entity entity) {
+    public void transformAfterSpawn(Entity entity) {
         for (SchematicEntityTransformer transformer : entityTransformers) {
-            transformer.transform(entity);
+            transformer.transformAfterSpawn(entity);
         }
     }
+
+    @Override
+    public void transformPreSpawn(Location location, Entity entity) {
+        for (SchematicEntityTransformer transformer : entityTransformers) {
+            transformer.transformPreSpawn(location, entity);
+        }
+    }
+
 }
