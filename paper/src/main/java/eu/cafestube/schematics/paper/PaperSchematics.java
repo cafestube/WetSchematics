@@ -173,10 +173,15 @@ public class PaperSchematics {
         }
 
         if(entityTransformer != null) {
-            entityTransformer.transform(entity);
+            entityTransformer.transformPreSpawn(location, entity);
         }
 
         entity.spawnAt(location, CreatureSpawnEvent.SpawnReason.CUSTOM);
+
+
+        if(entityTransformer != null) {
+            entityTransformer.transformAfterSpawn(entity);
+        }
     }
 
     public void placeBlockFast(World world, int x, int y, int z, BlockData blockData, boolean updateEntityAI, boolean updateLighting) {

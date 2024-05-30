@@ -13,7 +13,10 @@ public interface SchematicEntityTransformer {
     @Nullable
     CompoundBinaryTag transform(Location location, NamespacedKey type, CompoundBinaryTag nbt);
 
-    void transform(Entity entity);
+    void transformPreSpawn(Location location, Entity entity);
+
+    void transformAfterSpawn(Entity entity);
+
 
     static SchematicEntityTransformer combined(SchematicEntityTransformer... transformers) {
         return new CombinedSchematicEntityTransformer(List.of(transformers));
