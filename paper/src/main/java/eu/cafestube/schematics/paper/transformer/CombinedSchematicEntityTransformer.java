@@ -3,6 +3,7 @@ package eu.cafestube.schematics.paper.transformer;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -24,5 +25,12 @@ public class CombinedSchematicEntityTransformer implements SchematicEntityTransf
             }
         }
         return nbt;
+    }
+
+    @Override
+    public void transform(Entity entity) {
+        for (SchematicEntityTransformer transformer : entityTransformers) {
+            transformer.transform(entity);
+        }
     }
 }
