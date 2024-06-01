@@ -201,9 +201,11 @@ public class PaperSchematics {
     }
 
     public void placeBlockEntity(Location location, int dataVersion, NamespacedKey type, CompoundBinaryTag nbt) {
-        if(VERSION_ADAPTER == null && !hasSentVersionAdapterError) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to find version adapter. Ignoring block entity.");
-            hasSentVersionAdapterError = true;
+        if(VERSION_ADAPTER == null) {
+            if(!hasSentVersionAdapterError) {
+                plugin.getLogger().log(Level.SEVERE, "Failed to find version adapter. Ignoring block entity.");
+                hasSentVersionAdapterError = true;
+            }
             return;
         }
         VERSION_ADAPTER.setTileEntity(location, dataVersion, type, nbt);
