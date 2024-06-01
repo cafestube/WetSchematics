@@ -32,6 +32,9 @@ public class PaperSchematics {
 
     public PaperSchematics(JavaPlugin plugin) {
         this.plugin = plugin;
+        if(VERSION_ADAPTER == null) {
+            plugin.getLogger().log(Level.SEVERE, "Failed to find version adapter. Some features and performance might be limited.");
+        }
     }
 
     public void placeSchematic(Location location, Schematic schematic) {
