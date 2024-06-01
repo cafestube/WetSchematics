@@ -20,7 +20,9 @@ import org.jetbrains.annotations.Nullable;
 import javax.xml.validation.Schema;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 
 public class PaperSchematics {
@@ -35,6 +37,28 @@ public class PaperSchematics {
         if(VERSION_ADAPTER == null) {
             plugin.getLogger().log(Level.SEVERE, "Failed to find version adapter. Some features and performance might be limited.");
         }
+    }
+
+    public CompletableFuture<Void> loadRequiredChunks(Location location, Schematic schematic, boolean ignoreOffset) {
+        Location origin = ignoreOffset ? location : location.clone()
+                .add(new Vector(schematic.offset().x(), schematic.offset().y(), schematic.offset().z()));
+        Location other = origin.clone().add(schematic.width(), schematic.height(), schematic.length());
+
+        int originChunkX = origin.getBlockX() >> 4;
+        int originChunkZ = origin.getBlockZ() >> 4;
+
+        int otherChunkX = other.getBlockX() >> 4;
+        int otherChunkZ = other.getBlockZ() >> 4;
+
+        List<CompletableFuture<Chunk>> futures = new java.util.ArrayList<>();
+
+        for (int xx = originChunkX; xx <= otherChunkX; xx++) {
+            for (int zz = originChunkZ; zz <= otherChunkZ; zz++) {
+                futures.add(location.getWorld().getChunkAtAsync(xx, zz));
+            }
+        }
+
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
     }
 
     public void placeSchematic(Location location, Schematic schematic) {
