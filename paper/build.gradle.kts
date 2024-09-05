@@ -31,7 +31,7 @@ val versions = listOf("v1_20_6", "v1_21_1")
 
 
 dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.9.1"))
+    testImplementation(platform("org.junit:junit-bom:5.11.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     compileOnly("io.papermc.paper:paper-api:1.20.2-R0.1-SNAPSHOT")
 

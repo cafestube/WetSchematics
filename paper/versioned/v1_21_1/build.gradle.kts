@@ -10,7 +10,7 @@ version = "1.0-SNAPSHOT"
 dependencies {
     paperweight.paperDevBundle("1.21.1-R0.1-SNAPSHOT")
 
-    testImplementation(platform("org.junit:junit-bom:5.9.1"))
+    testImplementation(platform("org.junit:junit-bom:5.11.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 
     implementation(project(":paper:versioned"))
