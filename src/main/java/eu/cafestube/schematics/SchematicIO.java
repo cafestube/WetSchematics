@@ -58,6 +58,11 @@ public class SchematicIO {
     }
 
     public static Schematic parseSchematic(CompoundBinaryTag compound) {
+
+        if(compound.get("Schematic") != null) {
+            return parseSchematic(compound.getCompound("Schematic"));
+        }
+
         int version = compound.getInt("Version");
 
         SchematicVersion schematicVersion = versions.get(version);
