@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "eu.cafestube"
-version = "2.0.3-SNAPSHOT"
+version = "2.0.4-SNAPSHOT"
 
 allprojects {
     repositories {

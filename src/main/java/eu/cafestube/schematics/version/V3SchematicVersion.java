@@ -42,11 +42,17 @@ public class V3SchematicVersion implements SchematicVersion {
 
         Map<BlockPos, BlockEntity> blockEntityMap = V2SchematicVersion.parseBlockEntities(dataVersion, blocksTag);
 
-        CompoundBinaryTag biomesTag = compound.getCompound("Biomes");
-        CompoundBinaryTag biomePaletteTag = biomesTag.getCompound("Palette");
-        Map<Integer, String> biomePalette = StreamSupport.stream(biomePaletteTag.spliterator(), true)
-                .collect(Collectors.toMap(stringObjectEntry -> ((IntBinaryTag) stringObjectEntry.getValue()).value(), Map.Entry::getKey));
-        byte[] biomeData = biomesTag.getByteArray("Data");
+
+        BiomeData biomeData = null;
+        if(compound.get("Biomes") != null) {
+            CompoundBinaryTag biomesTag = compound.getCompound("Biomes");
+            CompoundBinaryTag biomePaletteTag = biomesTag.getCompound("Palette");
+            Map<Integer, String> biomePalette = StreamSupport.stream(biomePaletteTag.spliterator(), true)
+                    .collect(Collectors.toMap(stringObjectEntry -> ((IntBinaryTag) stringObjectEntry.getValue()).value(), Map.Entry::getKey));
+            byte[] biomeDataBytes = biomesTag.getByteArray("Data");
+
+            biomeData = new BiomeData(biomePalette, biomeDataBytes, BiomeDataType.THREE_DIMENSIONAL);
+        }
 
 
         ListBinaryTag entitiesTag = compound.getList("Entities");
@@ -54,7 +60,7 @@ public class V3SchematicVersion implements SchematicVersion {
 
 
         return new Schematic(dataVersion, width, height, length, metadata, offset, blockPalette, blockData,
-                blockEntityMap, entities, new BiomeData(biomePalette, biomeData, BiomeDataType.THREE_DIMENSIONAL));
+                blockEntityMap, entities, biomeData);
     }
 
     @Override
