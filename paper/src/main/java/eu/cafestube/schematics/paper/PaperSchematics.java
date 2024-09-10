@@ -136,6 +136,12 @@ public class PaperSchematics {
                         }
                     }
 
+                    if(blockData == null) {
+                        plugin.getLogger().severe("Failed to find block data in palette at " + x + ", " + y + ", " + z + " with state id "
+                                + schematic.getPaletteStateId(x, y, z));
+                        continue;
+                    }
+
                     if(blockData.equals("minecraft:air") && !placeAir)
                         continue;
 
