@@ -48,7 +48,7 @@ public class SchematicIO {
 
     public static Schematic parseSchematic(InputStream in, boolean compressed) throws IOException {
         try (in) {
-            CompoundBinaryTag tag = BinaryTagIO.reader().read(in, compressed ? BinaryTagIO.Compression.GZIP : BinaryTagIO.Compression.NONE);
+            CompoundBinaryTag tag = BinaryTagIO.unlimitedReader().read(in, compressed ? BinaryTagIO.Compression.GZIP : BinaryTagIO.Compression.NONE);
             return parseSchematic(tag);
         }
     }

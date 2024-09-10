@@ -68,9 +68,12 @@ public record Schematic(
     }
 
     public String getBlockData(int x, int y, int z) {
+        return blockStatePalette.get(getPaletteStateId(x, y, z));
+    }
+
+    public int getPaletteStateId(int x, int y, int z) {
         int index = (x + z * width + y * width * length);
-        int stateId = blockData[index];
-        return blockStatePalette.get(stateId);
+        return blockData[index];
     }
 
     public @Nullable String getBiomeId(int x, int z) {
