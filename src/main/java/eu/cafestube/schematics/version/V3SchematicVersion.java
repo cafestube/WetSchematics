@@ -59,8 +59,8 @@ public class V3SchematicVersion implements SchematicVersion {
         List<Entity> entities = V2SchematicVersion.parseEntities(entitiesTag);
 
 
-        return new Schematic(dataVersion, width, height, length, metadata, offset, blockPalette, blockData,
-                blockEntityMap, entities, biomeData);
+        return new Schematic(dataVersion, width, height, length, metadata, offset, blockPalette,
+                V1SchematicVersion.readBlockData(blockData, width, height, length), blockEntityMap, entities, biomeData);
     }
 
     @Override

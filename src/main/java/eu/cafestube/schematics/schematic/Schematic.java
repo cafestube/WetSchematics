@@ -20,7 +20,9 @@ public record Schematic(
         BlockPos offset,
 
         Map<Integer, String> blockStatePalette,
-        byte[] blockData,
+
+        //TODO: Eventually implement a more efficient way to store block data like the PackedBackingData in Sponge
+        int[] blockData,
 
         Map<BlockPos, BlockEntity> blockEntities,
         List<Entity> entities,

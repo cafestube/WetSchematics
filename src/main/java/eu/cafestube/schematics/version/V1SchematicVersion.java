@@ -7,6 +7,7 @@ import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.IntBinaryTag;
 import net.kyori.adventure.nbt.ListBinaryTag;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -39,8 +40,48 @@ public class V1SchematicVersion implements SchematicVersion {
         List<BlockEntity> blockEntities = parseBlockEntities(blockEntitiesTag);
         Map<BlockPos, BlockEntity> blockEntityMap = blockEntities.stream().collect(Collectors.toMap(BlockEntity::pos, blockEntity -> blockEntity));
 
-        return new Schematic(Schematic.NO_DATA_VERSION, width, height, length, metadata, offset, blockPalette, blockData,
-                blockEntityMap, new ArrayList<>(), null);
+        return new Schematic(Schematic.NO_DATA_VERSION, width, height, length, metadata, offset, blockPalette,
+                readBlockData(blockData, width, height, length), blockEntityMap, new ArrayList<>(), null);
+    }
+
+    public static int[] readBlockData(byte[] blockData, int width, int height, int length) {
+        int[] data = new int[width * height * length];
+
+        if(blockData.length == (width * height * length)) {
+            for(int i = 0; i < blockData.length; i++) {
+                data[i] = blockData[i];
+            }
+            return data;
+        }
+
+        /*
+         * Credit: SpongePowered (SchematicTranslator), license: MIT
+         */
+        int index = 0;
+        int i = 0;
+        int value;
+        int varint_length;
+        while (i < blockData.length) {
+            value = 0;
+            varint_length = 0;
+
+            while (true) {
+                value |= (blockData[i] & 127) << (varint_length++ * 7);
+                if (varint_length > 5) {
+                    throw new RuntimeException("VarInt too big (probably corrupted data)");
+                }
+                if ((blockData[i] & 128) != 128) {
+                    i++;
+                    break;
+                }
+                i++;
+            }
+
+            data[index] = value;
+            index++;
+        }
+
+        return data;
     }
 
     public static Map<Integer, String> parseBlockPalette(CompoundBinaryTag compound) {

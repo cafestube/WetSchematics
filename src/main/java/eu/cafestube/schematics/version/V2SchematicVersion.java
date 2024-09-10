@@ -9,6 +9,7 @@ import eu.cafestube.schematics.schematic.biome.BiomeData;
 import eu.cafestube.schematics.schematic.biome.BiomeDataType;
 import net.kyori.adventure.nbt.*;
 
+import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -57,8 +58,8 @@ public class V2SchematicVersion implements SchematicVersion {
         }
 
 
-        return new Schematic(dataVersion, width, height, length, metadata, offset, blockPalette, blockData,
-                blockEntityMap, entities, biomeData);
+        return new Schematic(dataVersion, width, height, length, metadata, offset, blockPalette,
+                V1SchematicVersion.readBlockData(blockData, width, height, length), blockEntityMap, entities, biomeData);
     }
 
 
@@ -112,6 +113,23 @@ public class V2SchematicVersion implements SchematicVersion {
                 blockEntityTag.getString("Id"), extra);
     }
 
+    public static byte[] writeBlockData(int[] data) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream(data.length);
+
+        for (int stateId : data) {
+            int id = stateId;
+
+            while ((id & -128) != 0) {
+                out.write(id & 127 | 128);
+                id >>>= 7;
+            }
+
+            out.write(id);
+        }
+
+        return out.toByteArray();
+    }
+
     @Override
     public CompoundBinaryTag serialize(Schematic schematic) {
         CompoundBinaryTag.Builder compound = CompoundBinaryTag.builder();
@@ -126,7 +144,7 @@ public class V2SchematicVersion implements SchematicVersion {
 
         compound.putIntArray("Offset", schematic.offset().toArray());
 
-        compound.putByteArray("BlockData", schematic.blockData());
+        compound.putByteArray("BlockData", writeBlockData(schematic.blockData()));
 
         V1SchematicVersion.writeBlockPalette(schematic.blockStatePalette(), compound);
 
