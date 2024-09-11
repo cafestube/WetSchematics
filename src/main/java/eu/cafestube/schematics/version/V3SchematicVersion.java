@@ -1,6 +1,7 @@
 package eu.cafestube.schematics.version;
 
 import eu.cafestube.schematics.math.BlockPos;
+import eu.cafestube.schematics.math.Pos;
 import eu.cafestube.schematics.schematic.BlockEntity;
 import eu.cafestube.schematics.schematic.Entity;
 import eu.cafestube.schematics.schematic.Schematic;
@@ -10,6 +11,7 @@ import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.IntBinaryTag;
 import net.kyori.adventure.nbt.ListBinaryTag;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -56,11 +58,22 @@ public class V3SchematicVersion implements SchematicVersion {
 
 
         ListBinaryTag entitiesTag = compound.getList("Entities");
-        List<Entity> entities = V2SchematicVersion.parseEntities(entitiesTag);
+        List<Entity> entities = parseEntities(entitiesTag);
 
 
         return new Schematic(dataVersion, width, height, length, metadata, offset, blockPalette,
                 V1SchematicVersion.readBlockData(blockData, width, height, length), blockEntityMap, entities, biomeData);
+    }
+
+    public static List<Entity> parseEntities(ListBinaryTag entitiesTag) {
+        if(entitiesTag == null) {
+            return new ArrayList<>();
+        }
+        return entitiesTag.stream().map(tag -> parseEntity((CompoundBinaryTag) tag)).collect(Collectors.toList());
+    }
+
+    public static Entity parseEntity(CompoundBinaryTag tag) {
+        return new Entity(Pos.fromDoubleList(tag.getList("Pos")), tag.getString("Id"), tag.getCompound("Data"));
     }
 
     public static Map<BlockPos, BlockEntity> parseBlockEntities(int dataVersion, CompoundBinaryTag compound) {
