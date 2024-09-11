@@ -40,7 +40,7 @@ public class V3SchematicVersion implements SchematicVersion {
                 .collect(Collectors.toMap(stringObjectEntry -> ((IntBinaryTag) stringObjectEntry.getValue()).value(), Map.Entry::getKey));
         byte[] blockData = blocksTag.getByteArray("Data");
 
-        Map<BlockPos, BlockEntity> blockEntityMap = V2SchematicVersion.parseBlockEntities(dataVersion, blocksTag);
+        Map<BlockPos, BlockEntity> blockEntityMap = parseBlockEntities(dataVersion, blocksTag);
 
 
         BiomeData biomeData = null;
@@ -62,6 +62,22 @@ public class V3SchematicVersion implements SchematicVersion {
         return new Schematic(dataVersion, width, height, length, metadata, offset, blockPalette,
                 V1SchematicVersion.readBlockData(blockData, width, height, length), blockEntityMap, entities, biomeData);
     }
+
+    public static Map<BlockPos, BlockEntity> parseBlockEntities(int dataVersion, CompoundBinaryTag compound) {
+        ListBinaryTag blockEntitiesTag = compound.getList("BlockEntities");
+        List<BlockEntity> blockEntities = parseBlockEntities(dataVersion, blockEntitiesTag);
+        return blockEntities.stream().collect(Collectors.toMap(BlockEntity::pos, blockEntity -> blockEntity));
+    }
+
+    private static List<BlockEntity> parseBlockEntities(int dataVersion, ListBinaryTag blockEntitiesTag) {
+        return blockEntitiesTag.stream().map(tag -> parseBlockEntity(dataVersion, (CompoundBinaryTag) tag)).collect(Collectors.toList());
+    }
+
+    private static BlockEntity parseBlockEntity(int dataVersion, CompoundBinaryTag blockEntityTag) {
+        return new BlockEntity(dataVersion, BlockPos.fromArray(blockEntityTag.getIntArray("Pos")),
+                blockEntityTag.getString("Id"), blockEntityTag.getCompound("Data"));
+    }
+
 
     @Override
     public CompoundBinaryTag serialize(Schematic schematic) {

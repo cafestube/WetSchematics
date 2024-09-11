@@ -17,7 +17,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.validation.Schema;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
@@ -159,7 +158,7 @@ public class PaperSchematics {
                         BlockEntity blockEntity = schematic.blockEntities().get(new BlockPos(x, y, z));
 
                         if(blockEntity != null) {
-                            placeBlockEntity(new Location(world, worldX, worldY, worldZ), schematic.dataVersion(),
+                            placeBlockEntity(new Location(world, worldX, worldY, worldZ), blockEntity.contentVersion(),
                                     NamespacedKey.fromString(blockEntity.id()), blockEntity.extra());
                         }
                     }

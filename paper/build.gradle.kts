@@ -9,7 +9,7 @@ plugins {
 
 
 group = "eu.cafestube"
-version = "2.0.4-SNAPSHOT"
+version = "2.0.5-SNAPSHOT"
 
 val obfuscatedVersionSpecific = configurations.create("obfuscatedVersionSpecific") {
     description = "Version Adapters to include in the JAR"
