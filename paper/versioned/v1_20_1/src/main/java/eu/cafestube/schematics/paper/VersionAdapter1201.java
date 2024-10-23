@@ -17,10 +17,14 @@ import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.ShortTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
+import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -72,6 +76,33 @@ public class VersionAdapter1201 implements VersionAdapter {
 
         }
 
+    }
+
+    @Override
+    public void flushChunks(World world, long[] chunks) {
+        CraftWorld craftWorld = (CraftWorld) world;
+        ServerLevel nmsWorld = craftWorld.getHandle();
+
+        for (long chunk : chunks) {
+            sendChunk(nmsWorld, new ChunkPos(chunk));
+        }
+    }
+
+    private void sendChunk(ServerLevel nmsWorld, ChunkPos coordIntPair) {
+        ChunkHolder chunkHolder = nmsWorld.chunkSource.chunkMap.getVisibleChunkIfPresent(coordIntPair.toLong());
+        if (chunkHolder == null) {
+            return;
+        }
+        LevelChunk levelChunk = nmsWorld.getChunkSource().getChunkAtIfLoadedImmediately(coordIntPair.x, coordIntPair.z);
+        if (levelChunk == null) {
+            return;
+        }
+        ClientboundLevelChunkWithLightPacket packet = new ClientboundLevelChunkWithLightPacket(levelChunk,
+                nmsWorld.getChunkSource().getLightEngine(), null, null, false);
+
+        for (ServerPlayer player : nmsWorld.getChunkSource().chunkMap.getPlayers(coordIntPair, false)) {
+            player.connection.send(packet);
+        }
     }
 
     @Override

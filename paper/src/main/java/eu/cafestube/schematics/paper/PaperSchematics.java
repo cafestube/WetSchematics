@@ -29,10 +29,16 @@ public class PaperSchematics {
     private static final VersionAdapter VERSION_ADAPTER = VersionAdapter.create();
 
     private boolean hasSentVersionAdapterError = false;
+    private final boolean doChunkFlushing;
     private final JavaPlugin plugin;
 
     public PaperSchematics(JavaPlugin plugin) {
+        this(plugin, false);
+    }
+
+    public PaperSchematics(JavaPlugin plugin, boolean doChunkFlushing) {
         this.plugin = plugin;
+        this.doChunkFlushing = doChunkFlushing;
         if(VERSION_ADAPTER == null) {
             plugin.getLogger().log(Level.SEVERE, "Failed to find version adapter. Some features and performance might be limited.");
         }
@@ -193,6 +199,30 @@ public class PaperSchematics {
 
                 placeEntity(new Location(world, worldX, worldY, worldZ, yaw, pitch), schematic.dataVersion(), extra, entityTransformer);
             }
+        }
+
+        if(doChunkFlushing && VERSION_ADAPTER != null) {
+            Location other = origin.clone().add(schematic.width(), schematic.height(), schematic.length());
+
+            int originChunkX = origin.getBlockX() >> 4;
+            int originChunkZ = origin.getBlockZ() >> 4;
+            int otherChunkX = other.getBlockX() >> 4;
+            int otherChunkZ = other.getBlockZ() >> 4;
+
+            int sizeX = otherChunkX - originChunkX + 1;
+            int sizeZ = otherChunkZ - originChunkZ + 1;
+
+            long[] chunks = new long[sizeX * sizeZ];
+
+            int index = 0;
+            for (int xx = originChunkX; xx <= otherChunkX; xx++) {
+                for (int zz = originChunkZ; zz <= otherChunkZ; zz++) {
+                    chunks[index] = Chunk.getChunkKey(xx, zz);
+                    index++;
+                }
+            }
+
+            VERSION_ADAPTER.flushChunks(world, chunks);
         }
     }
 

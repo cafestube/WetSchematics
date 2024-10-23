@@ -18,6 +18,7 @@ public interface VersionAdapter {
 
     void placeBlockFast(World world, int x, int y, int z, BlockData blockData, boolean updateEntityAI, boolean updateLighting);
 
+    void flushChunks(World world, long[] chunks);
 
     static VersionAdapter create() {
         //Paper announced that they will be deprecating the old CraftBukkit package names
