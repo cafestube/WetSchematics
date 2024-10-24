@@ -114,9 +114,9 @@ public class VersionAdapter1201 implements VersionAdapter {
         CompoundTag tag = convertNBTtoMC(nbt);
         tag.putString("id", type.toString());
 
-        if(dataVersion != -1 && dataVersion < CraftMagicNumbers.INSTANCE.getDataVersion()) {
+        if(dataVersion != -1 && dataVersion < Bukkit.getUnsafe().getDataVersion()) {
             tag = (CompoundTag) DataFixers.getDataFixer().update(References.BLOCK_ENTITY,
-                    new Dynamic(NbtOps.INSTANCE, tag), dataVersion, CraftMagicNumbers.INSTANCE.getDataVersion()).getValue();
+                    new Dynamic(NbtOps.INSTANCE, tag), dataVersion, Bukkit.getUnsafe().getDataVersion()).getValue();
         }
 
 
