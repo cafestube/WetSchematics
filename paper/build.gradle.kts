@@ -9,26 +9,9 @@ plugins {
 
 
 group = "eu.cafestube"
-version = "2.0.8-SNAPSHOT"
+version = "2.0.9-SNAPSHOT"
 
-val obfuscatedVersionSpecific = configurations.create("obfuscatedVersionSpecific") {
-    description = "Version Adapters to include in the JAR"
-    isCanBeConsumed = false
-    isCanBeResolved = true
-    shouldResolveConsistentlyWith(configurations["runtimeClasspath"])
-    attributes {
-        attribute(Obfuscation.OBFUSCATION_ATTRIBUTE, objects.named(Obfuscation.OBFUSCATED))
-    }
-}
-
-configurations.implementation {
-    extendsFrom(obfuscatedVersionSpecific)
-}
-
-val obfuscatedVersions = listOf("v1_20_1", "v1_20_2", "v1_20_4")
-val versions = listOf("v1_20_6", "v1_21_1", "v1_21_3")
-
-
+val versions = listOf("v1_21_1", "v1_21_3", "v1_21_4")
 
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.11.0"))
@@ -36,9 +19,6 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.20.2-R0.1-SNAPSHOT")
 
     compileOnly(project(":"))
-    obfuscatedVersions.forEach {
-        obfuscatedVersionSpecific(project(":paper:versioned:$it"))
-    }
     versions.forEach {
         implementation(project(":paper:versioned:$it"))
     }
@@ -48,14 +28,6 @@ dependencies {
 
 tasks.named<ShadowJar>("shadowJar") {
     dependsOn(versions.map { ":paper:versioned:${it}:build" })
-    from(Callable {
-        obfuscatedVersionSpecific.resolve()
-            .map { f ->
-                zipTree(f).matching {
-                    exclude("META-INF/")
-                }
-            }
-    })
 }
 
 

@@ -8,7 +8,7 @@ version = "1.0-SNAPSHOT"
 
 
 dependencies {
-    paperweight.paperDevBundle("1.20.4-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.21.4-R0.1-SNAPSHOT")
 
     testImplementation(platform("org.junit:junit-bom:5.11.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
@@ -18,14 +18,12 @@ dependencies {
 
 }
 
-
-tasks {
-    assemble {
-        dependsOn(reobfJar)
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
-
+    withSourcesJar()
 }
-
 
 tasks.test {
     useJUnitPlatform()

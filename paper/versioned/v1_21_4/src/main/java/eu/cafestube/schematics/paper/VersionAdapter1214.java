@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.*;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.server.level.ServerLevel;
@@ -18,14 +19,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import org.bukkit.*;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.v1_20_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_20_R2.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.v1_20_R2.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_20_R2.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
 
-public class VersionAdapter1202 implements VersionAdapter {
+public class VersionAdapter1214 implements VersionAdapter {
 
     @Override
     public Entity deserializeEntity(CompoundBinaryTag nbt, int dataVersion, World world) {
@@ -34,7 +32,7 @@ public class VersionAdapter1202 implements VersionAdapter {
         compound = ca.spottedleaf.dataconverter.minecraft.MCDataConverter.convertTag(ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.ENTITY,
                 compound, dataVersion, Bukkit.getUnsafe().getDataVersion());
 
-        return net.minecraft.world.entity.EntityType.create(compound, ((CraftWorld) world).getHandle())
+        return net.minecraft.world.entity.EntityType.create(compound, ((org.bukkit.craftbukkit.CraftWorld) world).getHandle(), net.minecraft.world.entity.EntitySpawnReason.LOAD)
                 .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?")).getBukkitEntity();
     }
 
@@ -65,7 +63,6 @@ public class VersionAdapter1202 implements VersionAdapter {
             }
 
         }
-
     }
 
     @Override
@@ -109,8 +106,8 @@ public class VersionAdapter1202 implements VersionAdapter {
                     new Dynamic(NbtOps.INSTANCE, tag), dataVersion, Bukkit.getUnsafe().getDataVersion()).getValue();
         }
 
-
-        BlockEntity blockEntity = BlockEntity.loadStatic(blockPos, craftWorld.getHandle().getBlockState(blockPos), tag);
+        BlockEntity blockEntity = BlockEntity.loadStatic(blockPos, craftWorld.getHandle().getBlockState(blockPos), tag,
+                MinecraftServer.getServer().registryAccess());
         if(blockEntity == null) return;
 
         craftWorld.getHandle().setBlockEntity(blockEntity);
@@ -152,6 +149,5 @@ public class VersionAdapter1202 implements VersionAdapter {
         }
         throw new IllegalArgumentException("Unknown tag type: " + tag.getClass());
     }
-
 
 }
