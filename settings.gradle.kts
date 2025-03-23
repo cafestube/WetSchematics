@@ -6,7 +6,7 @@ buildscript {
         maven("https://repo.papermc.io/repository/maven-public/")
     }
     dependencies {
-        classpath("io.papermc.paperweight.userdev:io.papermc.paperweight.userdev.gradle.plugin:2.0.0-beta.16")
+        classpath("io.papermc.paperweight.userdev:io.papermc.paperweight.userdev.gradle.plugin:2.0.0-SNAPSHOT")
     }
 }
 
