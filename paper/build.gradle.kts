@@ -9,9 +9,9 @@ plugins {
 
 
 group = "eu.cafestube"
-version = "2.0.9-SNAPSHOT"
+version = "2.0.10-SNAPSHOT"
 
-val versions = listOf("v1_21_1", "v1_21_3", "v1_21_4")
+val versions = listOf("v1_21_1", "v1_21_3", "v1_21_4", "v1_21_6")
 
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.11.0"))
@@ -56,7 +56,7 @@ publishing {
             maven {
                 name = "cafestubeRepository"
                 credentials(PasswordCredentials::class)
-                url = uri("https://repo.cafestu.be/repository/maven-public-snapshots/")
+                url = uri("https://repo.cafestube.net/repository/maven-public-snapshots/")
             }
         }
     }

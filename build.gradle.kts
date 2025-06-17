@@ -11,7 +11,7 @@ allprojects {
         mavenCentral()
         maven {
             name = "cafestubeRepository"
-            url = uri("https://repo.cafestu.be/repository/maven/")
+            url = uri("https://repo.cafestube.net/repository/maven/")
         }
         maven("https://repo.papermc.io/repository/maven-public/")
     }
@@ -40,7 +40,7 @@ publishing {
             maven {
                 name = "cafestubeRepository"
                 credentials(PasswordCredentials::class)
-                url = uri("https://repo.cafestu.be/repository/maven-public-snapshots/")
+                url = uri("https://repo.cafestube.net/repository/maven-public-snapshots/")
             }
         }
     }
