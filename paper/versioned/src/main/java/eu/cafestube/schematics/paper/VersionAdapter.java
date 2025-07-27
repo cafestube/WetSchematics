@@ -26,15 +26,15 @@ public interface VersionAdapter {
 
         String packageName = VersionAdapter.class.getPackageName();
 
-        String versionAdapterName = null;
+        String minecraftVersion;
         if (hasClass("com.destroystokyo.paper.PaperConfig") || hasClass("io.papermc.paper.configuration.Configuration")) {
-            versionAdapterName = "VersionAdapter" + Bukkit.getMinecraftVersion().replace(".", "");
+            minecraftVersion = "VersionAdapter" + Bukkit.getMinecraftVersion();
         } else {
-            versionAdapterName = "VersionAdapter" + Bukkit.getBukkitVersion().split("-")[0].replace(".", "");
+            minecraftVersion = "VersionAdapter" + Bukkit.getBukkitVersion().split("-")[0];
         }
 
         try {
-            return (VersionAdapter) Class.forName(packageName + "." + versionAdapterName).getDeclaredConstructor().newInstance();
+            return (VersionAdapter) Class.forName(packageName + "." + VersionProvider.getRevisionName(minecraftVersion)).getDeclaredConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException |
                  InvocationTargetException | NoSuchMethodException e) {
             return null;
