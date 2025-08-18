@@ -28,13 +28,13 @@ public interface VersionAdapter {
 
         String minecraftVersion;
         if (hasClass("com.destroystokyo.paper.PaperConfig") || hasClass("io.papermc.paper.configuration.Configuration")) {
-            minecraftVersion = "VersionAdapter" + Bukkit.getMinecraftVersion();
+            minecraftVersion = Bukkit.getMinecraftVersion();
         } else {
-            minecraftVersion = "VersionAdapter" + Bukkit.getBukkitVersion().split("-")[0];
+            minecraftVersion = Bukkit.getBukkitVersion().split("-")[0];
         }
 
         try {
-            return (VersionAdapter) Class.forName(packageName + "." + VersionProvider.getRevisionName(minecraftVersion)).getDeclaredConstructor().newInstance();
+            return (VersionAdapter) Class.forName(packageName + ".VersionAdapter" + VersionProvider.getRevisionName(minecraftVersion)).getDeclaredConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException |
                  InvocationTargetException | NoSuchMethodException e) {
             return null;

@@ -9,7 +9,7 @@ plugins {
 
 
 group = "eu.cafestube"
-version = "2.0.11-SNAPSHOT"
+version = "2.0.12-SNAPSHOT"
 
 val versions = listOf("v1_21_1", "v1_21_3", "v1_21_4", "v1_21_6")
 
