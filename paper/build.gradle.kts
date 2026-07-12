@@ -3,7 +3,7 @@ import io.papermc.paperweight.userdev.attribute.Obfuscation
 
 plugins {
     id("java-library")
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.gradleup.shadow") version "9.5.1"
     id("maven-publish")
 }
 
@@ -56,7 +56,7 @@ publishing {
             maven {
                 name = "cafestubeRepository"
                 credentials(PasswordCredentials::class)
-                url = uri("https://repo.cafestube.net/repository/maven-public-snapshots/")
+                url = uri("https://repo.cafestube.net/repository/maven-snapshots/")
             }
         }
     }
