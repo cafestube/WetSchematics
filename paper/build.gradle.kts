@@ -9,9 +9,9 @@ plugins {
 
 
 group = "eu.cafestube"
-version = "2.0.12-SNAPSHOT"
+version = "2.0.13-SNAPSHOT"
 
-val versions = listOf("v1_21_1", "v1_21_3", "v1_21_4", "v1_21_6")
+val versions = listOf("v1_21_1", "v1_21_3", "v1_21_4", "v1_21_6", "v26_2")
 
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.11.0"))
@@ -33,7 +33,7 @@ tasks.named<ShadowJar>("shadowJar") {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
     withSourcesJar()
 }
