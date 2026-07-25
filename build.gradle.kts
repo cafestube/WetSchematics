@@ -51,7 +51,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
 
 
-    api("net.kyori:adventure-nbt:4.17.0")
+    api("net.kyori:adventure-nbt:4.26.1")
     implementation("org.jetbrains:annotations:24.1.0")
 
 }
