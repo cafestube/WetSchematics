@@ -47,7 +47,7 @@ publishing {
 }
 
 dependencies {
-    testImplementation(platform("org.junit:junit-bom:5.11.0"))
+    testImplementation(platform("org.junit:junit-bom:6.1.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 
 
