@@ -16,7 +16,7 @@ val versions = listOf("v1_21_1", "v1_21_3", "v1_21_4", "v1_21_6", "v26_2")
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.11.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    compileOnly("io.papermc.paper:paper-api:1.20.2-R0.1-SNAPSHOT")
+    compileOnly("io.papermc.paper:paper-api:26.2.build.121-stable")
 
     compileOnly(project(":"))
     versions.forEach {
