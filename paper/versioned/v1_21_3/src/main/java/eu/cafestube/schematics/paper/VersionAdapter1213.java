@@ -1,6 +1,7 @@
 package eu.cafestube.schematics.paper;
 
 import com.mojang.serialization.Dynamic;
+import eu.cafestube.schematics.data.DataConverter;
 import net.kyori.adventure.nbt.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.*;
@@ -23,7 +24,12 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.entity.Entity;
 
+import java.util.ArrayList;
+import java.util.Map;
+
 public class VersionAdapter1213 implements VersionAdapter {
+
+    private final DataConverter dataConverter = new DataConverter1213(this);
 
     @Override
     public Entity deserializeEntity(CompoundBinaryTag nbt, int dataVersion, World world) {
@@ -75,6 +81,11 @@ public class VersionAdapter1213 implements VersionAdapter {
         }
     }
 
+    @Override
+    public DataConverter getDataConverter() {
+        return dataConverter;
+    }
+
     private void sendChunk(ServerLevel nmsWorld, ChunkPos coordIntPair) {
         ChunkHolder chunkHolder = nmsWorld.chunkSource.chunkMap.getVisibleChunkIfPresent(coordIntPair.toLong());
         if (chunkHolder == null) {
@@ -98,8 +109,7 @@ public class VersionAdapter1213 implements VersionAdapter {
 
         BlockPos blockPos = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
 
-        net.minecraft.nbt.CompoundTag tag = convertNBTtoMC(nbt);
-        tag.putString("id", type.toString());
+        net.minecraft.nbt.CompoundTag tag = concatTileEntityToNBT(type.asString(), nbt);
 
         if(dataVersion != -1 && dataVersion < Bukkit.getUnsafe().getDataVersion()) {
             tag = (net.minecraft.nbt.CompoundTag) DataFixers.getDataFixer().update(References.BLOCK_ENTITY,
@@ -113,41 +123,98 @@ public class VersionAdapter1213 implements VersionAdapter {
         craftWorld.getHandle().setBlockEntity(blockEntity);
     }
 
-    private CompoundTag convertNBTtoMC(CompoundBinaryTag nbt) {
+    public CompoundTag concatTileEntityToNBT(String type, CompoundBinaryTag extra) {
+        net.minecraft.nbt.CompoundTag tag = convertNBTtoMC(extra);
+        tag.putString("id", type);
+        return tag;
+    }
+
+    public CompoundTag concatEntityToNBT(String id, CompoundBinaryTag extra) {
+        net.minecraft.nbt.CompoundTag tag = convertNBTtoMC(extra);
+        tag.putString("id", id);
+        return tag;
+    }
+
+    public CompoundTag convertNBTtoMC(CompoundBinaryTag nbt) {
         CompoundTag mcNBT = new CompoundTag();
         nbt.forEach(stringEntry -> mcNBT.put(stringEntry.getKey(), convertTag(stringEntry.getValue())));
         return mcNBT;
     }
 
-    private Tag convertTag(BinaryTag tag) {
-        if(tag instanceof CompoundBinaryTag compoundTag) {
-            return convertNBTtoMC(compoundTag);
-        } else if(tag instanceof IntBinaryTag intTag) {
-            return IntTag.valueOf(intTag.value());
-        } else if(tag instanceof FloatBinaryTag floatTag) {
-            return FloatTag.valueOf(floatTag.value());
-        } else if(tag instanceof DoubleBinaryTag doubleTag) {
-            return DoubleTag.valueOf(doubleTag.value());
-        } else if(tag instanceof LongBinaryTag longTag) {
-            return LongTag.valueOf(longTag.value());
-        } else if(tag instanceof ShortBinaryTag shortTag) {
-            return ShortTag.valueOf(shortTag.value());
-        } else if(tag instanceof StringBinaryTag stringTag) {
-            return StringTag.valueOf(stringTag.value());
-        } else if(tag instanceof ByteArrayBinaryTag byteArrayTag) {
-            return new ByteArrayTag(byteArrayTag.value());
-        } else if(tag instanceof IntArrayBinaryTag intArrayTag) {
-            return new IntArrayTag(intArrayTag.value());
-        } else if(tag instanceof LongArrayBinaryTag longArrayTag) {
-            return new LongArrayTag(longArrayTag.value());
-        } else if(tag instanceof ListBinaryTag listTag) {
-            ListTag mcListTag = new ListTag();
-            listTag.forEach(binaryTag -> mcListTag.add(convertTag(binaryTag)));
-            return mcListTag;
-        } else if(tag instanceof ByteBinaryTag byteTag) {
-            return ByteTag.valueOf(byteTag.value());
-        }
-        throw new IllegalArgumentException("Unknown tag type: " + tag.getClass());
+    public static <T extends BinaryTag> Tag convertTag(T tag) {
+        return switch (tag.type().id()) {
+            case Tag.TAG_END -> EndTag.INSTANCE;
+            case Tag.TAG_BYTE -> ByteTag.valueOf(((ByteBinaryTag) tag).value());
+            case Tag.TAG_SHORT -> ShortTag.valueOf(((ShortBinaryTag) tag).value());
+            case Tag.TAG_INT -> IntTag.valueOf(((IntBinaryTag) tag).value());
+            case Tag.TAG_LONG -> LongTag.valueOf(((LongBinaryTag) tag).value());
+            case Tag.TAG_FLOAT -> FloatTag.valueOf(((FloatBinaryTag) tag).value());
+            case Tag.TAG_DOUBLE -> DoubleTag.valueOf(((DoubleBinaryTag) tag).value());
+            case Tag.TAG_BYTE_ARRAY -> new ByteArrayTag(((ByteArrayBinaryTag) tag).value());
+            case Tag.TAG_STRING -> StringTag.valueOf(((StringBinaryTag) tag).value());
+            case Tag.TAG_LIST -> {
+                ListBinaryTag listTag = (ListBinaryTag) tag;
+                int size = listTag.size();
+                ListTag list = new ListTag();
+                for (int i = 0; i < size; i++) {
+                    list.add(convertTag(listTag.get(i)));
+                }
+                yield list;
+            }
+            case Tag.TAG_COMPOUND -> {
+                CompoundBinaryTag compoundTag = (CompoundBinaryTag) tag;
+                CompoundTag compound = new CompoundTag();
+                for (Map.Entry<String, ? extends BinaryTag> entry : compoundTag) {
+                    compound.put(entry.getKey(), convertTag(entry.getValue()));
+                }
+                yield compound;
+            }
+            case Tag.TAG_INT_ARRAY -> new IntArrayTag(((IntArrayBinaryTag) tag).value());
+            case Tag.TAG_LONG_ARRAY -> new LongArrayTag(((LongArrayBinaryTag) tag).value());
+            default -> throw new IllegalArgumentException("Invalid tag type " + tag.type().id());
+        };
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T extends BinaryTag> T convertTag(Tag base) {
+        return switch (base.getId()) {
+            case Tag.TAG_END -> (T) EndBinaryTag.endBinaryTag();
+            case Tag.TAG_BYTE -> (T) ByteBinaryTag.byteBinaryTag(((ByteTag) base).getAsByte());
+            case Tag.TAG_SHORT -> (T) ShortBinaryTag.shortBinaryTag(((ShortTag) base).getAsShort());
+            case Tag.TAG_INT -> (T) IntBinaryTag.intBinaryTag(((IntTag) base).getAsInt());
+            case Tag.TAG_LONG -> (T) LongBinaryTag.longBinaryTag(((LongTag) base).getAsLong());
+            case Tag.TAG_FLOAT -> (T) FloatBinaryTag.floatBinaryTag(((FloatTag) base).getAsFloat());
+            case Tag.TAG_DOUBLE -> (T) DoubleBinaryTag.doubleBinaryTag(((DoubleTag) base).getAsDouble());
+            case Tag.TAG_BYTE_ARRAY -> (T) ByteArrayBinaryTag.byteArrayBinaryTag(((ByteArrayTag) base).getAsByteArray());
+            case Tag.TAG_STRING -> (T) StringBinaryTag.stringBinaryTag(((StringTag) base).getAsString());
+            case Tag.TAG_LIST -> {
+                ListTag originalList = ((ListTag) base);
+                if(originalList.isEmpty()) {
+                    yield (T) ListBinaryTag.empty();
+                }
+
+                ListBinaryTag.Builder<BinaryTag> listBuilder = ListBinaryTag.builder();
+                for (Tag entry : originalList) {
+                    BinaryTag converted = convertTag(entry);
+                    listBuilder.add(converted);
+                }
+                yield (T) listBuilder.build();
+            }
+            case Tag.TAG_COMPOUND -> {
+                CompoundTag tag = (CompoundTag) base;
+                CompoundBinaryTag.Builder builder = CompoundBinaryTag.builder();
+                for (String key : tag.getAllKeys()) {
+                    Tag value = tag.get(key);
+                    if (value != null) {
+                        builder.put(key, convertTag(value));
+                    }
+                }
+                yield (T) builder.build();
+            }
+            case Tag.TAG_INT_ARRAY -> (T) IntArrayBinaryTag.intArrayBinaryTag(((IntArrayTag) base).getAsIntArray());
+            case Tag.TAG_LONG_ARRAY -> (T) LongArrayBinaryTag.longArrayBinaryTag(((LongArrayTag) base).getAsLongArray());
+            default -> throw new IllegalArgumentException("Invalid tag type " + base.getId());
+        };
     }
 
 }

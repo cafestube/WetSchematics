@@ -49,6 +49,7 @@ publishing {
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.11.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
 
     api("net.kyori:adventure-nbt:4.17.0")

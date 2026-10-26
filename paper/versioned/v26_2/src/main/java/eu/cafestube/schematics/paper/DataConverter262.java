@@ -74,7 +74,7 @@ public class DataConverter262 implements DataConverter {
                 first = false;
             }
             out.append(']');
-        };
+        }
         return out.toString();
     }
 
@@ -129,6 +129,7 @@ public class DataConverter262 implements DataConverter {
 
     @Override
     public BiomeData upgradeBiomeData(BiomeData biomeData, int from) {
+        if(biomeData == null) return null;
         if(from >= dataVersion) return biomeData;
 
         Map<Integer, String> biomes = new HashMap<>(biomeData.biomePalette().size());

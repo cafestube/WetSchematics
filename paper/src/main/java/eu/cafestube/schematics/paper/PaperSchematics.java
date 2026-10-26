@@ -1,6 +1,8 @@
 package eu.cafestube.schematics.paper;
 
+import eu.cafestube.schematics.SchematicIO;
 import eu.cafestube.schematics.data.DataConverter;
+import eu.cafestube.schematics.data.NoOpDataConverter;
 import eu.cafestube.schematics.math.BlockPos;
 import eu.cafestube.schematics.paper.transformer.SchematicBlockTransformer;
 import eu.cafestube.schematics.paper.transformer.SchematicEntityTransformer;
@@ -20,7 +22,9 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -98,12 +102,16 @@ public class PaperSchematics {
         placeSchematic(location, schematic, ignoreOffset, tileEntities, entities, biomes, placeAir, updateEntityAI, updateLighting, false, null, null);
     }
 
+    public static DataConverter getDataConverter() {
+        return VERSION_ADAPTER != null ? VERSION_ADAPTER.getDataConverter() : NoOpDataConverter.INSTANCE;
+    }
+
     public Schematic upgradeSchematic(Schematic schematic) {
         if(VERSION_ADAPTER == null) return schematic;
         int dataVersion = Bukkit.getUnsafe().getDataVersion();
         if(schematic.dataVersion() >= dataVersion) return schematic;
 
-        DataConverter dataConverter = VERSION_ADAPTER.getDataConverter();;
+        DataConverter dataConverter = VERSION_ADAPTER.getDataConverter();
         Map<Integer, String> blockPalette = dataConverter.upgradeBlockPalette(schematic.blockStatePalette(), schematic.dataVersion());
         Map<BlockPos, BlockEntity> blockEntities = dataConverter.upgradeBlockEntities(schematic.blockEntities());
         List<Entity> entities = dataConverter.upgradeEntities(schematic.entities(), schematic.dataVersion());
