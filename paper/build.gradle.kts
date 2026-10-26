@@ -9,9 +9,9 @@ plugins {
 
 
 group = "eu.cafestube"
-version = "2.0.13-SNAPSHOT"
+version = "2.1.0-SNAPSHOT"
 
-val versions = listOf("v1_21_1", "v1_21_3", "v1_21_4", "v1_21_6", "v26_2")
+val versions = listOf("v1_21_1", "v1_21_3", "v1_21_4", "v1_21_6", "v26_2", "v26_3")
 
 dependencies {
     testImplementation(platform("org.junit:junit-bom:5.11.0"))

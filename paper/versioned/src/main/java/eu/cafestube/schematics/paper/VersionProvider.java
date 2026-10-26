@@ -18,11 +18,12 @@ class VersionProvider {
             this.put("1.21.9", "1216");
             this.put("1.21.10", "1216");
             this.put("1.21.11", "1216");
-
+            this.put("26.1", "262");
             this.put("26.2", "262");
+            this.put("26.3", "263");
         }
     };
-    private static final String FALLBACK_REVISION = "262";
+    private static final String FALLBACK_REVISION = "263";
 
     public static String getRevisionName(String version) {
         return VERSION_TO_REVISION.getOrDefault(version, FALLBACK_REVISION);
