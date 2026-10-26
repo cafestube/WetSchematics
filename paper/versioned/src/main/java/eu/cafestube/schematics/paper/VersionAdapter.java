@@ -1,5 +1,6 @@
 package eu.cafestube.schematics.paper;
 
+import eu.cafestube.schematics.data.DataConverter;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -9,6 +10,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Entity;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
 
 public interface VersionAdapter {
 
@@ -49,4 +51,6 @@ public interface VersionAdapter {
             return false;
         }
     }
+
+    DataConverter getDataConverter();
 }

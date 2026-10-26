@@ -1,13 +1,14 @@
 package eu.cafestube.schematics.version;
 
+import eu.cafestube.schematics.data.DataConverter;
 import eu.cafestube.schematics.math.BlockPos;
 import eu.cafestube.schematics.schematic.BlockEntity;
 import eu.cafestube.schematics.schematic.Schematic;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.IntBinaryTag;
 import net.kyori.adventure.nbt.ListBinaryTag;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,7 @@ public class V1SchematicVersion implements SchematicVersion {
 
 
     @Override
-    public Schematic deserialize(CompoundBinaryTag compound) {
+    public Schematic deserialize(CompoundBinaryTag compound, @NotNull DataConverter dataConverter) {
         int width = compound.getShort("Width", (short) 0) & 0xFFFF;
         int height = compound.getShort("Height", (short) 0) & 0xFFFF;
         int length = compound.getShort("Length", (short) 0) & 0xFFFF;
@@ -31,16 +32,17 @@ public class V1SchematicVersion implements SchematicVersion {
             int[] offsetArray = compound.getIntArray("Offset", new int[]{0, 0, 0});
             offset = BlockPos.fromArray(offsetArray);
         }
-
-        Map<Integer, String> blockPalette = parseBlockPalette(compound);
+        int dataVersion = Schematic.NO_DATA_VERSION;
+        Map<Integer, String> blockPalette = parseBlockPalette(compound, dataConverter, dataVersion);
 
         byte[] blockData = compound.getByteArray("BlockData");
 
         ListBinaryTag blockEntitiesTag = compound.getList("TileEntities");
         List<BlockEntity> blockEntities = parseBlockEntities(blockEntitiesTag);
-        Map<BlockPos, BlockEntity> blockEntityMap = blockEntities.stream().collect(Collectors.toMap(BlockEntity::pos, blockEntity -> blockEntity));
+        Map<BlockPos, BlockEntity> blockEntityMap = blockEntities.stream().collect(Collectors.toMap(BlockEntity::pos,
+                dataConverter::upgradeBlockEntity));
 
-        return new Schematic(Schematic.NO_DATA_VERSION, width, height, length, metadata, offset, blockPalette,
+        return new Schematic(dataConverter.getFinalDataVersion(dataVersion), width, height, length, metadata, offset, blockPalette,
                 readBlockData(blockData, width, height, length), blockEntityMap, new ArrayList<>(), null);
     }
 
@@ -84,7 +86,7 @@ public class V1SchematicVersion implements SchematicVersion {
         return data;
     }
 
-    public static Map<Integer, String> parseBlockPalette(CompoundBinaryTag compound) {
+    public static Map<Integer, String> parseBlockPalette(CompoundBinaryTag compound, @NotNull DataConverter dataConverter, int from) {
         int paletteMax = compound.getInt("PaletteMax", 0);
         CompoundBinaryTag paletteTag = compound.getCompound("Palette");
 
@@ -93,7 +95,8 @@ public class V1SchematicVersion implements SchematicVersion {
         }
 
         return StreamSupport.stream(paletteTag.spliterator(), false)
-                .collect(Collectors.toMap(entry -> ((IntBinaryTag) entry.getValue()).value(), Map.Entry::getKey));
+                .collect(Collectors.toMap(entry -> ((IntBinaryTag) entry.getValue()).value(),
+                        stringEntry -> dataConverter.upgradeBlockState(stringEntry.getKey(), from)));
     }
 
     public static void writeBlockPalette(Map<Integer, String> palette, CompoundBinaryTag.Builder compound) {

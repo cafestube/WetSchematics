@@ -1,5 +1,6 @@
 package eu.cafestube.schematics.version;
 
+import eu.cafestube.schematics.data.DataConverter;
 import eu.cafestube.schematics.math.BlockPos;
 import eu.cafestube.schematics.math.Pos;
 import eu.cafestube.schematics.schematic.BlockEntity;
@@ -7,20 +8,24 @@ import eu.cafestube.schematics.schematic.Entity;
 import eu.cafestube.schematics.schematic.Schematic;
 import eu.cafestube.schematics.schematic.biome.BiomeData;
 import eu.cafestube.schematics.schematic.biome.BiomeDataType;
+import net.kyori.adventure.nbt.BinaryTag;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.IntBinaryTag;
 import net.kyori.adventure.nbt.ListBinaryTag;
+import org.jetbrains.annotations.NotNull;
 
+import javax.xml.crypto.Data;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class V3SchematicVersion implements SchematicVersion {
 
     @Override
-    public Schematic deserialize(CompoundBinaryTag compound) {
+    public Schematic deserialize(CompoundBinaryTag compound, @NotNull DataConverter dataConverter) {
         int dataVersion = compound.getInt("DataVersion", 0);
 
         int width = compound.getShort("Width", (short) 0) & 0xFFFF;
@@ -39,10 +44,11 @@ public class V3SchematicVersion implements SchematicVersion {
 
         CompoundBinaryTag paletteTag = blocksTag.getCompound("Palette");
         Map<Integer, String> blockPalette = StreamSupport.stream(paletteTag.spliterator(), true)
-                .collect(Collectors.toMap(stringObjectEntry -> ((IntBinaryTag) stringObjectEntry.getValue()).value(), Map.Entry::getKey));
+                .collect(Collectors.toMap(stringObjectEntry -> ((IntBinaryTag) stringObjectEntry.getValue()).value(),
+                        stringEntry -> dataConverter.upgradeBlockState(stringEntry.getKey(), dataVersion)));
         byte[] blockData = blocksTag.getByteArray("Data");
 
-        Map<BlockPos, BlockEntity> blockEntityMap = parseBlockEntities(dataVersion, blocksTag);
+        Map<BlockPos, BlockEntity> blockEntityMap = parseBlockEntities(dataVersion, blocksTag, dataConverter);
 
 
         BiomeData biomeData = null;
@@ -50,7 +56,8 @@ public class V3SchematicVersion implements SchematicVersion {
             CompoundBinaryTag biomesTag = compound.getCompound("Biomes");
             CompoundBinaryTag biomePaletteTag = biomesTag.getCompound("Palette");
             Map<Integer, String> biomePalette = StreamSupport.stream(biomePaletteTag.spliterator(), true)
-                    .collect(Collectors.toMap(stringObjectEntry -> ((IntBinaryTag) stringObjectEntry.getValue()).value(), Map.Entry::getKey));
+                    .collect(Collectors.toMap(stringObjectEntry -> ((IntBinaryTag) stringObjectEntry.getValue()).value(),
+                            stringEntry -> dataConverter.upgradeBiome(stringEntry.getKey(), dataVersion)));
             byte[] biomeDataBytes = biomesTag.getByteArray("Data");
 
             biomeData = new BiomeData(biomePalette, biomeDataBytes, BiomeDataType.THREE_DIMENSIONAL);
@@ -58,28 +65,27 @@ public class V3SchematicVersion implements SchematicVersion {
 
 
         ListBinaryTag entitiesTag = compound.getList("Entities");
-        List<Entity> entities = parseEntities(entitiesTag);
+        List<Entity> entities = parseEntities(entitiesTag, dataConverter, dataVersion);
 
-
-        return new Schematic(dataVersion, width, height, length, metadata, offset, blockPalette,
+        return new Schematic(dataConverter.getFinalDataVersion(dataVersion), width, height, length, metadata, offset, blockPalette,
                 V1SchematicVersion.readBlockData(blockData, width, height, length), blockEntityMap, entities, biomeData);
     }
 
-    public static List<Entity> parseEntities(ListBinaryTag entitiesTag) {
+    public static List<Entity> parseEntities(ListBinaryTag entitiesTag, DataConverter dataConverter, int dataVersion) {
         if(entitiesTag == null) {
             return new ArrayList<>();
         }
-        return entitiesTag.stream().map(tag -> parseEntity((CompoundBinaryTag) tag)).collect(Collectors.toList());
+        return entitiesTag.stream().map(tag -> dataConverter.upgradeEntity(parseEntity((CompoundBinaryTag) tag), dataVersion)).collect(Collectors.toList());
     }
 
     public static Entity parseEntity(CompoundBinaryTag tag) {
         return new Entity(Pos.fromDoubleList(tag.getList("Pos")), tag.getString("Id"), tag.getCompound("Data"));
     }
 
-    public static Map<BlockPos, BlockEntity> parseBlockEntities(int dataVersion, CompoundBinaryTag compound) {
+    public static Map<BlockPos, BlockEntity> parseBlockEntities(int dataVersion, CompoundBinaryTag compound, DataConverter dataConverter) {
         ListBinaryTag blockEntitiesTag = compound.getList("BlockEntities");
         List<BlockEntity> blockEntities = parseBlockEntities(dataVersion, blockEntitiesTag);
-        return blockEntities.stream().collect(Collectors.toMap(BlockEntity::pos, blockEntity -> blockEntity));
+        return blockEntities.stream().collect(Collectors.toMap(BlockEntity::pos, dataConverter::upgradeBlockEntity));
     }
 
     private static List<BlockEntity> parseBlockEntities(int dataVersion, ListBinaryTag blockEntitiesTag) {

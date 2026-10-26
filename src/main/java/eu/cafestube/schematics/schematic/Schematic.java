@@ -31,7 +31,7 @@ public record Schematic(
         BiomeData biomeData
 ) {
 
-    public static final int NO_DATA_VERSION = -1;
+    public static final int NO_DATA_VERSION = 1631; //Default to 1.13.2
 
     @Override
     public String toString() {

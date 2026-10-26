@@ -1,11 +1,13 @@
 package eu.cafestube.schematics.paper;
 
+import eu.cafestube.schematics.data.DataConverter;
 import eu.cafestube.schematics.math.BlockPos;
 import eu.cafestube.schematics.paper.transformer.SchematicBlockTransformer;
 import eu.cafestube.schematics.paper.transformer.SchematicEntityTransformer;
 import eu.cafestube.schematics.schematic.BlockEntity;
 import eu.cafestube.schematics.schematic.Entity;
 import eu.cafestube.schematics.schematic.Schematic;
+import eu.cafestube.schematics.schematic.biome.BiomeData;
 import net.kyori.adventure.nbt.BinaryTagIO;
 import net.kyori.adventure.nbt.CompoundBinaryTag;
 import net.kyori.adventure.nbt.ListBinaryTag;
@@ -20,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
@@ -95,6 +98,32 @@ public class PaperSchematics {
         placeSchematic(location, schematic, ignoreOffset, tileEntities, entities, biomes, placeAir, updateEntityAI, updateLighting, false, null, null);
     }
 
+    public Schematic upgradeSchematic(Schematic schematic) {
+        if(VERSION_ADAPTER == null) return schematic;
+        int dataVersion = Bukkit.getUnsafe().getDataVersion();
+        if(schematic.dataVersion() >= dataVersion) return schematic;
+
+        DataConverter dataConverter = VERSION_ADAPTER.getDataConverter();;
+        Map<Integer, String> blockPalette = dataConverter.upgradeBlockPalette(schematic.blockStatePalette(), schematic.dataVersion());
+        Map<BlockPos, BlockEntity> blockEntities = dataConverter.upgradeBlockEntities(schematic.blockEntities());
+        List<Entity> entities = dataConverter.upgradeEntities(schematic.entities(), schematic.dataVersion());
+        BiomeData biomeData = dataConverter.upgradeBiomeData(schematic.biomeData(), schematic.dataVersion());
+
+        return new Schematic(
+                dataVersion,
+                schematic.width(),
+                schematic.height(),
+                schematic.length(),
+                schematic.metadata(),
+                schematic.offset(),
+                blockPalette,
+                schematic.blockData(),
+                blockEntities,
+                entities,
+                biomeData
+        );
+    }
+
     public void placeSchematic(
             Location location,
             Schematic schematic,
@@ -109,6 +138,8 @@ public class PaperSchematics {
             @Nullable SchematicBlockTransformer blockTransformer,
             @Nullable SchematicEntityTransformer entityTransformer
     ) {
+        schematic = upgradeSchematic(schematic);
+
         if(biomes && schematic.biomeData() == null)
             biomes = false;
 
