@@ -1,5 +1,9 @@
 package eu.cafestube.schematics.paper;
 
+import ca.spottedleaf.dataconverter.minecraft.MCDataConverter;
+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCDataType;
+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
+import ca.spottedleaf.dataconverter.types.nbt.NBTMapType;
 import ca.spottedleaf.moonrise.common.PlatformHooks;
 import com.mojang.serialization.Dynamic;
 import eu.cafestube.schematics.data.DataConverter;
@@ -7,10 +11,7 @@ import eu.cafestube.schematics.schematic.BlockEntity;
 import eu.cafestube.schematics.schematic.Entity;
 import eu.cafestube.schematics.schematic.biome.BiomeData;
 import net.minecraft.SharedConstants;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.NbtUtils;
-import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.level.block.state.StateHolder;
@@ -92,8 +93,9 @@ public class DataConverter263 implements DataConverter {
         if(from >= dataVersion) return state;
 
         CompoundTag tag = convertToVanilla(state, from);
-        CompoundTag result = PlatformHooks.get().convertNBT(References.BLOCK_STATE,
-                MinecraftServer.getServer().getFixerUpper(), tag, from, dataVersion);
+        Dynamic<Tag> dynamic = new Dynamic<>(NbtOps.INSTANCE, tag);
+        CompoundTag result = (CompoundTag) MinecraftServer.getServer().getFixerUpper()
+                .update(References.BLOCK_STATE, dynamic, from, dataVersion).getValue();
         return convertBackToSpongeRepresentation(result);
     }
 
@@ -102,9 +104,7 @@ public class DataConverter263 implements DataConverter {
         if(from.contentVersion() >= dataVersion) return from;
         CompoundTag nbt = versionAdapter.concatTileEntityToNBT(from.id(), from.extra());
 
-        CompoundTag result = PlatformHooks.get().convertNBT(References.BLOCK_ENTITY,
-                MinecraftServer.getServer().getFixerUpper(), nbt, from.contentVersion(), dataVersion);
-
+        CompoundTag result = MCDataConverter.convertTag(MCTypeRegistry.TILE_ENTITY, nbt, from.contentVersion(), dataVersion);
         String id = result.getString("id").get();
         result.remove("id");
 

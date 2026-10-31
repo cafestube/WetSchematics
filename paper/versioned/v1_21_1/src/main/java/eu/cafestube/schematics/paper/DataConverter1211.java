@@ -1,5 +1,7 @@
 package eu.cafestube.schematics.paper;
 
+import ca.spottedleaf.dataconverter.minecraft.MCDataConverter;
+import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 import com.mojang.serialization.Dynamic;
 import eu.cafestube.schematics.data.DataConverter;
 import eu.cafestube.schematics.schematic.BlockEntity;
@@ -8,6 +10,7 @@ import eu.cafestube.schematics.schematic.biome.BiomeData;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.level.block.state.StateHolder;
@@ -78,9 +81,9 @@ public class DataConverter1211 implements DataConverter {
         if(from >= dataVersion) return state;
 
         CompoundTag tag = convertToVanilla(state);
-        CompoundTag result = (CompoundTag) MinecraftServer.getServer().getFixerUpper().update(
-                References.BLOCK_STATE, new Dynamic<>(NbtOps.INSTANCE, tag), from, dataVersion
-        ).getValue();
+        Dynamic<Tag> dynamic = new Dynamic<>(NbtOps.INSTANCE, tag);
+        CompoundTag result = (CompoundTag) MinecraftServer.getServer().getFixerUpper()
+                .update(References.BLOCK_STATE, dynamic, from, dataVersion).getValue();
         return convertBackToSpongeRepresentation(result);
     }
 
@@ -89,10 +92,7 @@ public class DataConverter1211 implements DataConverter {
         if(from.contentVersion() >= dataVersion) return from;
         CompoundTag nbt = versionAdapter.concatTileEntityToNBT(from.id(), from.extra());
 
-        CompoundTag result = (CompoundTag) MinecraftServer.getServer().getFixerUpper().update(
-                References.BLOCK_ENTITY, new Dynamic<>(NbtOps.INSTANCE, nbt), from.contentVersion(), dataVersion
-        ).getValue();
-
+        CompoundTag result = MCDataConverter.convertTag(MCTypeRegistry.TILE_ENTITY, nbt, from.contentVersion(), dataVersion);
         String id = result.getString("id");
         if (id.isEmpty()) {
             throw new NoSuchElementException("Missing 'id' tag");
