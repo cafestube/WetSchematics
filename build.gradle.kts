@@ -52,7 +52,7 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
 
-    api("net.kyori:adventure-nbt:4.17.0")
+    api("net.kyori:adventure-nbt:5.2.0")
     implementation("org.jetbrains:annotations:24.1.0")
 
 }
